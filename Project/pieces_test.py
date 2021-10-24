@@ -1,6 +1,7 @@
 
 from pieces import *
 
+
 # Tests
 print('Rook Tests:')
 r = Rook(0, 0, -1)  # 0 = "black"

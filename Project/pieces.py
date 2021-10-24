@@ -32,8 +32,8 @@ class Piece:
 
 
 class Pawn(Piece):
-    """Need to fix pawn movement implementation. The movement according on color
-        is based on: "white" = 1, "black" = -1 for simplicity"""
+    """Need to add additional (static?) methods for pawn movement implementation (ie: en passant, promotion).
+        The movement according on color is based on: "white" = 1, "black" = -1 for simplicity"""
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
