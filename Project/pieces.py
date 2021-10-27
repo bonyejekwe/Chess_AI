@@ -1,10 +1,16 @@
 # pieces.py:  defines classes for each chess piece type
 
-# class InvalidMoveError(Exception):
-# pass  # print("Invalid move")
+class InvalidMoveError(Exception):
 
-# class InvalidBoardPlacementError(Exception):
-# pass  # print("Invalid Board Placement")
+    def __init__(self, xpos, ypos):
+        super().__init__(f"Invalid move: Cannot move to ({xpos}, {ypos})")
+
+
+class InvalidBoardPlacementError(Exception):
+
+    def __init__(self, xpos, ypos):
+        super().__init__(f"Invalid Board Placement: Cannot move to ({xpos}, {ypos})")
+
 
 class Piece:
 
@@ -14,21 +20,20 @@ class Piece:
         self._color = color
 
     def get_color(self):
-        return self._color
-        # if self._color == 1:
-        # return "white"
-        # else:
-        # return "black"
+        return self._color  # if self._color == 1: # return "white" # else: # return "black"
 
     def get_position(self):
         return self._xpos, self._ypos
 
     def move(self, new_xpos, new_ypos):
-        if (0 <= new_xpos <= 7) and (0 <= new_ypos <= 7):
-            self._xpos = new_xpos
-            self._ypos = new_ypos
-        else:
-            print("Invalid Board Placement")  # raise InvalidBoardPlacementError(Exception)
+        try:
+            if (0 <= new_xpos <= 7) and (0 <= new_ypos <= 7):
+                self._xpos = new_xpos
+                self._ypos = new_ypos
+            else:
+                raise InvalidBoardPlacementError(new_xpos, new_ypos)
+        except InvalidBoardPlacementError as e:
+            print(e)
 
 
 class Pawn(Piece):
@@ -39,10 +44,13 @@ class Pawn(Piece):
         super().__init__(xpos, ypos, color)
 
     def move(self, new_xpos, new_ypos):
-        if abs(new_xpos - self._xpos) == self._color:  # check condition validity
-            super().move(new_xpos, new_ypos)
-        else:
-            print("Invalid move")  # raise InvalidMoveError(Exception)
+        try:
+            if abs(new_xpos - self._xpos) == self._color:  # check condition validity
+                super().move(new_xpos, new_ypos)
+            else:
+                raise InvalidMoveError(new_xpos, new_ypos)
+        except InvalidMoveError as e:
+            print(e)
 
     def get_color(self):
         super().get_color()
@@ -61,11 +69,14 @@ class Knight(Piece):
         super().__init__(xpos, ypos, color)
 
     def move(self, new_xpos, new_ypos):
-        if ((abs(new_xpos - self._xpos) == 1 and abs(new_ypos - self._ypos) == 2)
-                or (abs(new_xpos - self._xpos) == 2 and abs(new_ypos - self._ypos) == 1)):  # L-shape movement
-            super().move(new_xpos, new_ypos)
-        else:
-            print("Invalid move")
+        try:
+            if ((abs(new_xpos - self._xpos) == 1 and abs(new_ypos - self._ypos) == 2)
+                    or (abs(new_xpos - self._xpos) == 2 and abs(new_ypos - self._ypos) == 1)):  # L-shape movement
+                super().move(new_xpos, new_ypos)
+            else:
+                raise InvalidMoveError(new_xpos, new_ypos)
+        except InvalidMoveError as e:
+            print(e)
 
     def get_color(self):
         super().get_color()
@@ -83,10 +94,13 @@ class Bishop(Piece):
         super().__init__(xpos, ypos, color)
 
     def move(self, new_xpos, new_ypos):
-        if abs(new_xpos - self._xpos) == abs(new_ypos - self._ypos):  # moves diagonally
-            super().move(new_xpos, new_ypos)
-        else:
-            print("Invalid move")
+        try:
+            if abs(new_xpos - self._xpos) == abs(new_ypos - self._ypos):  # moves diagonally
+                super().move(new_xpos, new_ypos)
+            else:
+                raise InvalidMoveError(new_xpos, new_ypos)
+        except InvalidMoveError as e:
+            print(e)
 
     def get_color(self):
         super().get_color()
@@ -104,10 +118,13 @@ class Rook(Piece):
         super().__init__(xpos, ypos, color)
 
     def move(self, new_xpos, new_ypos):
-        if (new_xpos - self._xpos) * (new_ypos - self._ypos) == 0:  # moves horizontally or vertically
-            super().move(new_xpos, new_ypos)
-        else:
-            print("Invalid move")
+        try:
+            if (new_xpos - self._xpos) * (new_ypos - self._ypos) == 0:  # moves horizontally or vertically
+                super().move(new_xpos, new_ypos)
+            else:
+                raise InvalidMoveError(new_xpos, new_ypos)
+        except InvalidMoveError as e:
+            print(e)
 
     def get_color(self):
         super().get_color()
@@ -125,11 +142,14 @@ class Queen(Piece):
         super().__init__(xpos, ypos, color)
 
     def move(self, new_xpos, new_ypos):
-        if ((new_xpos - self._xpos) * (new_ypos - self._ypos) == 0 or
-                (abs(new_xpos - self._xpos) == abs(new_ypos - self._ypos))):  # move like bishop or move like rook
-            super().move(new_xpos, new_ypos)
-        else:
-            print("Invalid move")
+        try:
+            if ((new_xpos - self._xpos) * (new_ypos - self._ypos) == 0 or
+                    (abs(new_xpos - self._xpos) == abs(new_ypos - self._ypos))):  # move like bishop or move like rook
+                super().move(new_xpos, new_ypos)
+            else:
+                raise InvalidMoveError(new_xpos, new_ypos)
+        except InvalidMoveError as e:
+            print(e)
 
     def get_color(self):
         super().get_color()
@@ -147,10 +167,13 @@ class King(Piece):
         super().__init__(xpos, ypos, color)
 
     def move(self, new_xpos, new_ypos):
-        if abs(new_xpos - self._xpos <= 1) and abs(new_ypos - self._ypos <= 1):  # moves to adjacent square
-            super().move(new_xpos, new_ypos)
-        else:
-            print("Invalid move")
+        try:
+            if abs(new_xpos - self._xpos <= 1) and abs(new_ypos - self._ypos <= 1):  # moves to adjacent square
+                super().move(new_xpos, new_ypos)
+            else:
+                raise InvalidMoveError(new_xpos, new_ypos)
+        except InvalidMoveError as e:
+            print(e)
 
     def get_color(self):
         super().get_color()
