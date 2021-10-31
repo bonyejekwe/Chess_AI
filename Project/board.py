@@ -38,7 +38,8 @@ class Board:
         empty = [[None for i in range(8)] for i in range(4)]
         self._board.append(white_back_row)
         self._board.append(white_pawns)
-        self._board.append(empty)
+        for row in empty:
+            self._board.append(row)
         self._board.append(black_pawns)
         self._board.append(black_back_row)
         self._turn = 1
@@ -59,7 +60,7 @@ class Board:
 
         if not self.validate_turn_color(piece1):  # checks to see if it is that pieces turn
             raise Board.WrongTeamError("It is team {t1}'s turn, tried to move piece "
-                                       "from {t2}".format(t1 = self._turn, t2 = piece1.get_color()))
+                                       "from team {t2}".format(t1 = self._turn, t2 = piece1.get_color()))
         piece2 = self.get_piece_from_position(pos2)
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
             self._board[pos2[0]][pos2[1]] = piece1
@@ -129,10 +130,12 @@ class Board:
         :param position: Position you would like convert
         :return: A tuple with two numbers as position
         """
-        return (ord(position[1]) - 65, position[1])
+        return (ord(position[0]) - 65, position[1])
 
     def __repr__(self):
+        string = ""
         for i in self._board:
             for j in i:
-                print(str(j) + " ", end="")
-            print()
+                string += str(j) + ","
+            string += "\n"
+        return string
