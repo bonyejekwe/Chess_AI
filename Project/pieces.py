@@ -46,7 +46,8 @@ class Pawn(Piece):
         super().__init__(xpos, ypos, color)
 
     def move(self, new_xpos, new_ypos):
-        if abs(new_xpos - self._xpos) == self._color:  # check condition validity
+
+        if new_ypos - self._ypos == self._color:  # check condition validity
             super().move(new_xpos, new_ypos)
         else:
             raise InvalidMoveError(new_xpos, new_ypos)

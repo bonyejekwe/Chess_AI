@@ -67,7 +67,7 @@ class Board:
         print(self.is_position_empty(pos2))
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
             self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = piece1, piece2
-            piece1.move(pos2[1], pos2[0])
+            piece1.move(pos2[0], pos2[1])
             # self._board[pos2[1]][pos2[0]] = piece1
             # self._board[pos1[1]][pos1[0]] = piece2
         else:  # if the place is not empty
@@ -75,10 +75,7 @@ class Board:
                 # TODO Need to figure out how we're deleting the piece from the board and how we want to return it
                 #  would also like to try and add it to the captured pieces array
                 self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = None, piece2
-                piece1.move(pos1[1], pos1[0])
-
-                # self._board[pos2[1]][pos2[0]] = piece1
-                # self._board[pos1[1]][pos1[0]] = piece2
+                piece1.move(pos1[0], pos1[1])
                 self._captured.append(piece2)
                 return piece2
             else:
@@ -150,6 +147,9 @@ class Board:
 
     def get_captured(self):
         return self._captured
+
+    def get_current_turn(self):
+        return self._turn
 
     def __repr__(self):
         alphabet = ["A","B", "C", "D", "E", "F", "G", "H"]
