@@ -52,8 +52,8 @@ class Board:
         :return: The piece captured, or None if no piece is captured
         """
 
-        pos1 = self._letter_pos_to_num_pos(position1)
-        pos2 = self._letter_pos_to_num_pos(position2)
+        pos1 = self.letter_pos_to_num_pos(position1)
+        pos2 = self.letter_pos_to_num_pos(position2)
         if self.is_position_empty(pos1):  # Trying to move a piece at a position that has no piece
             raise Board.EmptySpaceError("The space at {pos} is empty".format(pos = position1))
         piece1 = self.get_piece_from_position(pos1)
@@ -67,18 +67,19 @@ class Board:
         print(self.is_position_empty(pos2))
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
             self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = piece1, piece2
-            piece1.move(pos1[1], pos1[0])
+            piece1.move(pos2[1], pos2[0])
             # self._board[pos2[1]][pos2[0]] = piece1
             # self._board[pos1[1]][pos1[0]] = piece2
         else:  # if the place is not empty
             if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team
                 # TODO Need to figure out how we're deleting the piece from the board and how we want to return it
                 #  would also like to try and add it to the captured pieces array
-                self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = piece1, piece2
+                self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = None, piece2
                 piece1.move(pos1[1], pos1[0])
+
                 # self._board[pos2[1]][pos2[0]] = piece1
                 # self._board[pos1[1]][pos1[0]] = piece2
-                #  self._captured.append(piece2)
+                self._captured.append(piece2)
                 return piece2
             else:
                 raise Board.WrongTeamError("Trying to capture piece at {pos} but it is the same team of {team}".format(
@@ -136,13 +137,19 @@ class Board:
             return False
 
     @staticmethod
-    def _letter_pos_to_num_pos(self, position: tuple) -> tuple:
+    def letter_pos_to_num_pos(position: tuple) -> tuple:
         """
         Converts a position like (A,1) to (0,0)
         :param position: Position you would like convert
         :return: A tuple with two numbers as position
         """
         return (ord(position[0]) - 65, position[1]-1)
+
+    def get_board(self):
+        return self._board
+
+    def get_captured(self):
+        return self._captured
 
     def __repr__(self):
         alphabet = ["A","B", "C", "D", "E", "F", "G", "H"]
