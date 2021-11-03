@@ -55,12 +55,12 @@ class Board:
         pos1 = self.letter_pos_to_num_pos(position1)
         pos2 = self.letter_pos_to_num_pos(position2)
         if self.is_position_empty(pos1):
-            raise Board.EmptySpaceError("The space at {pos} is empty".format(pos = position1))
+            raise Board.EmptySpaceError("The space at {pos} is empty".format(pos=position1))
         piece1 = self.get_piece_from_position(pos1)
 
         if not self.validate_turn_color(piece1):  # checks to see if it is that pieces turn
             raise Board.WrongTeamError("It is team {t1}'s turn, tried to move piece "
-                                       "from team {t2}".format(t1 = self._turn, t2 = piece1.get_color()))
+                                       "from team {t2}".format(t1=self._turn, t2=piece1.get_color()))
         piece2 = self.get_piece_from_position(pos2)
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
             self._board[pos2[0]][pos2[1]] = piece1
@@ -74,7 +74,7 @@ class Board:
                 #  self._captured.append(piece2)
             else:
                 raise Board.WrongTeamError("Trying to capture piece at {pos} but it is the same team of {team}".format(
-                    pos = position2, team = self._turn))
+                    pos=position2, team=self._turn))
 
     def switch_turn(self):
         self._turn *= -1
@@ -91,8 +91,8 @@ class Board:
             raise IndexError("The desired position is out of bounds of the board")
 
         if not (isinstance(piece, Piece) or piece is None):  # makes sure the position actually holds a piece or is empty
-            raise ValueError("Piece should not be of type {t} and value {v}".format(t = type(piece),
-                                                                                    v = piece))
+            raise ValueError("Piece should not be of type {t} and value {v}".format(t=type(piece),
+                                                                                    v=piece))
         return piece
 
     def is_position_empty(self, position: tuple) -> bool:
@@ -108,8 +108,8 @@ class Board:
                 return False
             else:
                 raise ValueError("The board at this point is neither empty or a piece. It has a type of {type1} and has a "
-                                 "value of {value}".format(type1 = type(self._board[position[0]][position[1]]),
-                                                           value = self._board[position[0]][position[1]]))
+                                 "value of {value}".format(type1=type(self._board[position[0]][position[1]]),
+                                                           value=self._board[position[0]][position[1]]))
         except IndexError:
             raise IndexError("The desired position is out of bounds of the board")
 

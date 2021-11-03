@@ -52,15 +52,9 @@ class Pawn(Piece):
         except InvalidMoveError as e:
             print(e)
 
-    def get_color(self):
-        super().get_color()
-
-    def get_position(self):
-        super().get_position()
-
     def __str__(self):
-        # return "P" (actual representation)
-        return f"P: ({self._xpos}, {self._ypos})"  # test representation
+        return "P"  # (actual representation)
+        # return f"P: ({self._xpos}, {self._ypos})"  # test representation
 
 
 class Knight(Piece):
@@ -78,14 +72,8 @@ class Knight(Piece):
         except InvalidMoveError as e:
             print(e)
 
-    def get_color(self):
-        super().get_color()
-
-    def get_position(self):
-        super().get_position()
-
     def __str__(self):
-        return f"N: ({self._xpos}, {self._ypos})"
+        return "N"
 
 
 class Bishop(Piece):
@@ -102,14 +90,8 @@ class Bishop(Piece):
         except InvalidMoveError as e:
             print(e)
 
-    def get_color(self):
-        super().get_color()
-
-    def get_position(self):
-        super().get_position()
-
     def __str__(self):
-        return f"B: ({self._xpos}, {self._ypos})"
+        return "B"
 
 
 class Rook(Piece):
@@ -126,14 +108,8 @@ class Rook(Piece):
         except InvalidMoveError as e:
             print(e)
 
-    def get_color(self):
-        super().get_color()
-
-    def get_position(self):
-        super().get_position()
-
     def __str__(self):
-        return f"R: ({self._xpos}, {self._ypos})"
+        return "R"
 
 
 class Queen(Piece):
@@ -151,14 +127,8 @@ class Queen(Piece):
         except InvalidMoveError as e:
             print(e)
 
-    def get_color(self):
-        super().get_color()
-
-    def get_position(self):
-        super().get_position()
-
     def __str__(self):
-        return f"Q: ({self._xpos}, {self._ypos})"
+        return "Q"
 
 
 class King(Piece):
@@ -175,11 +145,5 @@ class King(Piece):
         except InvalidMoveError as e:
             print(e)
 
-    def get_color(self):
-        super().get_color()
-
-    def get_position(self):
-        super().get_position()
-
     def __str__(self):
-        return f"K: ({self._xpos}, {self._ypos})"
+        return "K"
