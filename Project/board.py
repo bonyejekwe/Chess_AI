@@ -166,3 +166,7 @@ class Board:
                 string += "{:>8}".format(str(j))
             string += "\n"
         return string
+
+    @staticmethod
+    def test(self):
+        print("yay")
