@@ -49,32 +49,44 @@ class Board:
         Moves a piece from one position to another
         :param position1: A tuple containing a string and a number for x and y. Current Position
         :param position2: A tuple containing a string and a number for x and y. Desired Position
-        :return: Nothing?
+        :return: The piece captured, or None if no piece is captured
         """
 
         pos1 = self.letter_pos_to_num_pos(position1)
         pos2 = self.letter_pos_to_num_pos(position2)
-        if self.is_position_empty(pos1):
-            raise Board.EmptySpaceError("The space at {pos} is empty".format(pos=position1))
+        if self.is_position_empty(pos1):  # Trying to move a piece at a position that has no piece
+            raise Board.EmptySpaceError("The space at {pos} is empty".format(pos = position1))
         piece1 = self.get_piece_from_position(pos1)
 
         if not self.validate_turn_color(piece1):  # checks to see if it is that pieces turn
             raise Board.WrongTeamError("It is team {t1}'s turn, tried to move piece "
-                                       "from team {t2}".format(t1=self._turn, t2=piece1.get_color()))
-        piece2 = self.get_piece_from_position(pos2)
+                                       "from team {t2}".format(t1 = self._turn, t2 = piece1.get_color()))
+
+        piece2 = self.get_piece_from_position(pos2)  # After it makes sure that piece 1 can be moved
+        print(pos2)
+        print(self.is_position_empty(pos2))
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
-            self._board[pos2[0]][pos2[1]] = piece1
-            self._board[pos1[0]][pos1[0]] = piece2
+            self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = piece1, piece2
+            piece1.move(pos2[1], pos2[0])
+            # self._board[pos2[1]][pos2[0]] = piece1
+            # self._board[pos1[1]][pos1[0]] = piece2
         else:  # if the place is not empty
             if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team
                 # TODO Need to figure out how we're deleting the piece from the board and how we want to return it
                 #  would also like to try and add it to the captured pieces array
-                self._board[pos2[0]][pos2[1]] = piece1
-                self._board[pos1[0]][pos1[0]] = piece2
-                #  self._captured.append(piece2)
+                self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = None, piece2
+                piece1.move(pos1[1], pos1[0])
+
+                # self._board[pos2[1]][pos2[0]] = piece1
+                # self._board[pos1[1]][pos1[0]] = piece2
+                self._captured.append(piece2)
+                return piece2
             else:
                 raise Board.WrongTeamError("Trying to capture piece at {pos} but it is the same team of {team}".format(
-                    pos=position2, team=self._turn))
+                    pos = position2, team = self._turn))
+        return None
+
+
 
     def switch_turn(self):
         self._turn *= -1
@@ -86,13 +98,13 @@ class Board:
         :return: A piece object or None if no object is returned
         """
         try:  # ensures the position is actually on the board
-            piece = self._board[position[0]][position[1]]
+            piece = self._board[position[1]][position[0]]
         except IndexError:
             raise IndexError("The desired position is out of bounds of the board")
 
         if not (isinstance(piece, Piece) or piece is None):  # makes sure the position actually holds a piece or is empty
-            raise ValueError("Piece should not be of type {t} and value {v}".format(t=type(piece),
-                                                                                    v=piece))
+            raise ValueError("Piece should not be of type {t} and value {v}".format(t = type(piece),
+                                                                                    v = piece))
         return piece
 
     def is_position_empty(self, position: tuple) -> bool:
@@ -102,14 +114,14 @@ class Board:
         :return: True if position is empty, false if not
         """
         try:
-            if self._board[position[0]][position[1]] is None:
+            if self._board[position[1]][position[0]] is None:
                 return True
-            elif isinstance(self._board[position[0]][position[1]], Piece):
+            elif isinstance(self._board[position[1]][position[0]], Piece):
                 return False
             else:
-                raise ValueError("The board at this point is neither empty or a piece. It has a type of {type1} and has a "
-                                 "value of {value}".format(type1=type(self._board[position[0]][position[1]]),
-                                                           value=self._board[position[0]][position[1]]))
+                raise ValueError("The board at this point is neither empty or a piece. It has a type of {type1} and has"
+                                 " a value of {value}".format(type1 = type(self._board[position[0]][position[1]]),
+                                                              value = self._board[position[0]][position[1]]))
         except IndexError:
             raise IndexError("The desired position is out of bounds of the board")
 
@@ -124,18 +136,33 @@ class Board:
         else:
             return False
 
-    def letter_pos_to_num_pos(self, position: tuple) -> tuple:
+    @staticmethod
+    def letter_pos_to_num_pos(position: tuple) -> tuple:
         """
         Converts a position like (A,1) to (0,0)
         :param position: Position you would like convert
         :return: A tuple with two numbers as position
         """
-        return (ord(position[0]) - 65, position[1])
+        return (ord(position[0]) - 65, position[1]-1)
+
+    def get_board(self):
+        return self._board
+
+    def get_captured(self):
+        return self._captured
 
     def __repr__(self):
-        string = ""
+        alphabet = ["A","B", "C", "D", "E", "F", "G", "H"]
+        num = 1
+        string = " "
+        for letter in alphabet:
+            string += "{:>8}".format(letter)
+        string += "\n\n"
+        num = 1
         for i in self._board:
+            string += str(num)
+            num += 1
             for j in i:
-                string += str(j) + ","
+                string += "{:>8}".format(str(j))
             string += "\n"
         return string
