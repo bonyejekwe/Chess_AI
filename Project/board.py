@@ -72,9 +72,9 @@ class Board:
             #print("Empty Space Move")
         else:  # if the place is not empty
             if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team
-                print("Exchange space")
-                print(piece1)
-                print(piece2)
+                #print("Exchange space")
+                #print(piece1)
+                #print(piece2)
                 self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = piece1, None
                 piece1.move(pos2[0], pos2[1])
                 self._captured.append(piece2)
