@@ -63,19 +63,20 @@ class Board:
                                        "from team {t2}".format(t1 = self._turn, t2 = piece1.get_color()))
 
         piece2 = self.get_piece_from_position(pos2)  # After it makes sure that piece 1 can be moved
-        print(pos2)
-        print(self.is_position_empty(pos2))
+        #print(pos2)
+        #print(self.is_position_empty(pos2))
+
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
             self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = piece1, piece2
             piece1.move(pos2[0], pos2[1])
-            # self._board[pos2[1]][pos2[0]] = piece1
-            # self._board[pos1[1]][pos1[0]] = piece2
+            #print("Empty Space Move")
         else:  # if the place is not empty
             if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team
-                # TODO Need to figure out how we're deleting the piece from the board and how we want to return it
-                #  would also like to try and add it to the captured pieces array
-                self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = None, piece2
-                piece1.move(pos1[0], pos1[1])
+                print("Exchange space")
+                print(piece1)
+                print(piece2)
+                self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = piece1, None
+                piece1.move(pos2[0], pos2[1])
                 self._captured.append(piece2)
                 return piece2
             else:
@@ -166,7 +167,3 @@ class Board:
                 string += "{:>8}".format(str(j))
             string += "\n"
         return string
-
-    @staticmethod
-    def test(self):
-        print("yay")
