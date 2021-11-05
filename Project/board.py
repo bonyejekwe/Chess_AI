@@ -1,5 +1,5 @@
 from pieces import *
-
+from typing import Union
 
 class Board:
 
@@ -44,7 +44,7 @@ class Board:
         self._board.append(black_back_row)
         self._turn = 1
 
-    def move_piece(self, position1: tuple, position2: tuple):
+    def move_piece(self, position1: tuple, position2: tuple) -> Union[Piece, None]:
         """
         Moves a piece from one position to another
         :param position1: A tuple containing a string and a number for x and y. Current Position
@@ -62,19 +62,35 @@ class Board:
             raise Board.WrongTeamError("It is team {t1}'s turn, tried to move piece "
                                        "from team {t2}".format(t1 = self._turn, t2 = piece1.get_color()))
 
+        # Checks to see if there are any pieces blocking each other
+        # TODO Finish this
+        if not isinstance(piece1, Knight):  # Knight can jump over pieces so it doesn't matter
+            difx = pos2[0]-pos1[0]
+            dify = pos2[1]-pos1[1]
+            print(difx, dify)
+            if difx == 0:  # can assume dify != 0 as validate_turn_color will have thrown an error
+                pass
+                # for i in range(dify):
+
+            elif dify == 0:  # can assume difx != 0 as validate_turn_color will have thrown an error
+                pass
+                # for
+            else:
+                pass
+
         piece2 = self.get_piece_from_position(pos2)  # After it makes sure that piece 1 can be moved
-        #print(pos2)
-        #print(self.is_position_empty(pos2))
+        # print(pos2)
+        # print(self.is_position_empty(pos2))
 
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
             self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = piece1, piece2
             piece1.move(pos2[0], pos2[1])
-            #print("Empty Space Move")
+            # print("Empty Space Move")
         else:  # if the place is not empty
             if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team
-                #print("Exchange space")
-                #print(piece1)
-                #print(piece2)
+                # print("Exchange space")
+                # print(piece1)
+                # print(piece2)
                 self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = piece1, None
                 piece1.move(pos2[0], pos2[1])
                 self._captured.append(piece2)
@@ -95,6 +111,8 @@ class Board:
         :param position: A tuple of integers of the indices of the position desired
         :return: A piece object or None if no object is returned
         """
+        if position[0] < 0 or position[1] < 0:
+            raise IndexError("The desired position is out of bounds of the board")
         try:  # ensures the position is actually on the board
             piece = self._board[position[1]][position[0]]
         except IndexError:
@@ -118,8 +136,8 @@ class Board:
                 return False
             else:
                 raise ValueError("The board at this point is neither empty or a piece. It has a type of {type1} and has"
-                                 " a value of {value}".format(type1 = type(self._board[position[0]][position[1]]),
-                                                              value = self._board[position[0]][position[1]]))
+                                 " a value of {value}".format(type1 = type(self._board[position[1]][position[0]]),
+                                                              value = self._board[position[1]][position[0]]))
         except IndexError:
             raise IndexError("The desired position is out of bounds of the board")
 
