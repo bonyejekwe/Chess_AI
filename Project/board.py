@@ -25,7 +25,7 @@ class Board:
 
         self._board = list()
         self._move_count = 0
-        self._turn = 1
+        self._turn = 1  # sets the turn to white
         self._captured = list()
 
     def start_game(self):
@@ -45,7 +45,7 @@ class Board:
             self._board.append(row)
         self._board.append(black_pawns)
         self._board.append(black_back_row)
-        self._turn = 1
+        self._turn = 1  # sets the turn to white
 
     def move_piece(self, position1: tuple, position2: tuple) -> Union[Piece, None]:
         """
@@ -76,13 +76,13 @@ class Board:
         piece2 = self.get_piece_from_position(pos2)
 
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
-            self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
             piece1.move(pos2x, pos2y)
+            self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
 
         else:  # if the place is not empty
-            if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team it moves it and kills the other piece
-                self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
+            if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team it moves it and takes the other piece
                 piece1.move(pos2x, pos2y)  # moves the individual piece object
+                self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
                 self._captured.append(piece2)  # adds the captured piece to an array of captured pieces
                 return piece2  # returns the piece captured
             else:  # catches the error when you try and capture a piece of the same team
@@ -105,10 +105,10 @@ class Board:
         # Checks to see if there are any pieces blocking each other
         # TODO Finish this
         if not isinstance(piece1, Knight):  # Knight can jump over pieces so it doesn't matter
-            difx = pos2x - pos1x
-            dify = pos2y - pos1y
-            print(difx, dify)
-            # Case where the peice moved only in the y direction
+            difx = pos2x - pos1x  # difference in y
+            dify = pos2y - pos1y  # difference in x
+
+            # Case where the piece moved only in the y direction
             if difx == 0:  # can assume dify != 0 as validate_turn_color will have thrown an error
                 for i in range(min(pos1y, pos2y) + 1, max(pos1y, pos2y)):
                     in_the_way.append(self._board[i][pos2x])
@@ -126,7 +126,7 @@ class Board:
                 else:
                     step = -1
                 # Makes the list of the x values along the diagonal
-                lst_x = [x for x in range(pos1x+step, pos2x, step)]  # adds step so we don't consider where the piece currently is
+                lst_x = list(range(pos1x+step, pos2x, step))  # adds step so we don't consider where the piece currently is
 
                 # Determines the step for the range function to come up with values for diagonal
                 if pos2y > pos1y:
@@ -134,11 +134,27 @@ class Board:
                 else:
                     step = -1
                 # Makes the list of the y values along the diagonal
-                lst_y = [x for x in range(pos1y+step, pos2y, step)]  # adds step so we don't consider where the piece currently is
+                lst_y = list(range(pos1y+step, pos2y, step))  # adds step so we don't consider where the piece currently is
                 for x, y in zip(lst_x, lst_y):
                     in_the_way.append(self._board[y][x])
-
+        #print(in_the_way)
         return in_the_way
+
+        # noinspection PyUnreachableCode
+        """
+        The explanation of how the diagonal works: Say if you wanted to move Queen D1 to A3, which are indices 0,3 to 
+        3,0, the piece would move: (y,x) [(0,3),(1,2),(2,1),(3,0)]. If instead you wanted to move Queen D1 to H5, 0,3 
+        to 4,7, the piece would move: (y,x) [(0,3), (1,4), (2,5), (3,6), (4,7)]. If You wanted to move queen D8 to A5: 
+        7,3 to 4,0: [(7,3), (6,2), (5,1), (4,0)] (y,x). If you wanted to move D8 to H4: 7,3 to 3,7: 
+        [(7,3), (6,4), (5,5), (4,6), (3,7)]. Depending on which way the piece is moving diagonally changes which whether
+        x or y is decreasing or increasing for the positions which need to be checked. So first it determines which way 
+        the piece is moving in the x direction, whether it be to the left or to the right, if it is to the left, the 
+        step is set to -1 so the range function decreases. It adds step to the initial value as it is just position 1 
+        which we know is occupied. It does the exact same thing but for the y direction. It then iterates through all
+        the pieces along the diagonal and adds each individual one to the array in_the_way
+                
+        """
+
 
     def is_piece_in_the_way(self, pos1: tuple, pos2: tuple) -> bool:
         """
@@ -215,13 +231,23 @@ class Board:
         """
         return (ord(position[0]) - 65, position[1]-1)
 
-    def get_board(self):
+    def get_board(self) -> list:
+        """
+        :return: The board array
+        """
         return self._board
 
-    def get_captured(self):
+    def get_captured(self) -> list:
+        """
+        :return: The list of captured items
+        """
         return self._captured
 
-    def get_current_turn(self):
+    def get_current_turn(self) -> int:
+        """
+        1 is white, -1 is black
+        :return: The integer representing who's turn it is
+        """
         return self._turn
 
     def __repr__(self):
