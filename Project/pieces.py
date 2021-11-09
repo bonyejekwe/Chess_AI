@@ -60,7 +60,8 @@ class Pawn(Piece):
             for x in range(8):
                 if y - self._ypos == self._color or \
                         ((self._ypos == 1 and self.get_color() == 1) or (self._ypos == 6 and self.get_color() == -1)):
-                    moves.append((x, y))
+                    if not (x == self._xpos and y == self._ypos):
+                        moves.append((x, y))
         return moves
 
     def __str__(self):
@@ -84,9 +85,10 @@ class Knight(Piece):
         moves = []
         for y in range(8):
             for x in range(8):
-                if ((abs(x - self._xpos) == 1 and abs(y - self._ypos) == 2)
+                if (abs(x - self._xpos) == 1 and abs(y - self._ypos) == 2
                         or (abs(x - self._xpos) == 2 and abs(y - self._ypos) == 1)):  # L-shape movement
-                    moves.append((x, y))
+                    if not (x == self._xpos and y == self._ypos):
+                        moves.append((x, y))
         return moves
 
     def __str__(self):
@@ -109,7 +111,8 @@ class Bishop(Piece):
         for y in range(8):
             for x in range(8):
                 if abs(x - self._xpos) == abs(y - self._ypos):
-                    moves.append((x, y))
+                    if not (x == self._xpos and y == self._ypos):
+                        moves.append((x, y))
         return moves
 
     def __str__(self):
@@ -132,7 +135,8 @@ class Rook(Piece):
         for x in range(8):
             for y in range(8):
                 if (x - self._xpos) * (y - self._ypos) == 0:
-                    moves.append((x, y))
+                    if not (x == self._xpos and y == self._ypos):
+                        moves.append((x, y))
         return moves
 
     def __str__(self):
@@ -156,7 +160,8 @@ class Queen(Piece):
         for y in range(8):
             for x in range(8):
                 if (x - self._xpos) * (y - self._ypos) == 0 or (abs(x - self._xpos) == abs(y - self._ypos)):
-                    moves.append((x, y))
+                    if not (x == self._xpos and y == self._ypos):
+                        moves.append((x, y))
         return moves
 
     def __str__(self):
@@ -179,7 +184,8 @@ class King(Piece):
         for y in range(8):
             for x in range(8):
                 if abs(x - self._xpos <= 1) and abs(y - self._ypos <= 1):
-                    moves.append((x, y))
+                    if not (x == self._xpos and y == self._ypos):
+                        moves.append((x, y))
         return moves
 
     def __str__(self):
