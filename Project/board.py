@@ -1,5 +1,5 @@
 from pieces import *
-
+from typing import Union
 
 class Board:
 
@@ -10,6 +10,9 @@ class Board:
         pass
 
     class SpaceOccupiedError(Exception):
+        pass
+
+    class PieceInTheWayError(Exception):
         pass
 
     def __init__(self):
@@ -44,7 +47,7 @@ class Board:
         self._board.append(black_back_row)
         self._turn = 1
 
-    def move_piece(self, position1: tuple, position2: tuple):
+    def move_piece(self, position1: tuple, position2: tuple) -> Union[Piece, None]:
         """
         Moves a piece from one position to another
         :param position1: A tuple containing a string and a number for x and y. Current Position
@@ -54,39 +57,106 @@ class Board:
 
         pos1 = self.letter_pos_to_num_pos(position1)
         pos2 = self.letter_pos_to_num_pos(position2)
+        pos1x, pos1y = pos1
+        pos2x, pos2y = pos2
+
         if self.is_position_empty(pos1):  # Trying to move a piece at a position that has no piece
             raise Board.EmptySpaceError("The space at {pos} is empty".format(pos = position1))
         piece1 = self.get_piece_from_position(pos1)
 
-        if not self.validate_turn_color(piece1):  # checks to see if it is that pieces turn
+        if not self.validate_turn_color(piece1):  # Checks to see if it is that pieces turn
             raise Board.WrongTeamError("It is team {t1}'s turn, tried to move piece "
                                        "from team {t2}".format(t1 = self._turn, t2 = piece1.get_color()))
 
-        piece2 = self.get_piece_from_position(pos2)  # After it makes sure that piece 1 can be moved
-        #print(pos2)
-        #print(self.is_position_empty(pos2))
+        # Checks to see if there are any pieces in between where a piece is and where it wants to go
+        if self.is_piece_in_the_way(pos1, pos2):
+            raise Board.PieceInTheWayError("There is(are) a piece(s) in between where you are and where you would"
+                                           " like to move")
+
+        piece2 = self.get_piece_from_position(pos2)
 
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
-            self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = piece1, piece2
-            piece1.move(pos2[0], pos2[1])
-            #print("Empty Space Move")
+            self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
+            piece1.move(pos2x, pos2y)
+
         else:  # if the place is not empty
-            if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team
-                #print("Exchange space")
-                #print(piece1)
-                #print(piece2)
-                self._board[pos2[1]][pos2[0]], self._board[pos1[1]][pos1[0]] = piece1, None
-                piece1.move(pos2[0], pos2[1])
-                self._captured.append(piece2)
-                return piece2
-            else:
+            if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team it moves it and kills the other piece
+                self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
+                piece1.move(pos2x, pos2y)  # moves the individual piece object
+                self._captured.append(piece2)  # adds the captured piece to an array of captured pieces
+                return piece2  # returns the piece captured
+            else:  # catches the error when you try and capture a piece of the same team
                 raise Board.WrongTeamError("Trying to capture piece at {pos} but it is the same team of {team}".format(
                     pos = position2, team = self._turn))
         return None
 
+    def pieces_in_the_way(self, pos1: tuple, pos2: tuple) -> list:
+        """
+        Finds the pieces in between where a piece is and where it wants to go. It ignores knights as knights can jump
+        over pieces
+        :param pos1: The initial position of the piece
+        :param pos2: Where the piece wants to go
+        :return: A list of all the pieces or empty spaces in between where a piece is and where it wants to go
+        """
+        pos1x, pos1y = pos1
+        pos2x, pos2y = pos2
+        piece1 = self.get_piece_from_position(pos1)
+        in_the_way = []
+        # Checks to see if there are any pieces blocking each other
+        # TODO Finish this
+        if not isinstance(piece1, Knight):  # Knight can jump over pieces so it doesn't matter
+            difx = pos2x - pos1x
+            dify = pos2y - pos1y
+            print(difx, dify)
+            # Case where the peice moved only in the y direction
+            if difx == 0:  # can assume dify != 0 as validate_turn_color will have thrown an error
+                for i in range(min(pos1y, pos2y) + 1, max(pos1y, pos2y)):
+                    in_the_way.append(self._board[i][pos2x])
 
+            # Case where the piece only moved in the x direction
+            elif dify == 0:  # can assume difx != 0 as validate_turn_color will have thrown an error
+                in_the_way = self._board[pos2y][min(pos1x, pos2x) + 1:max(pos1x, pos2x)]
+
+            # Case where the piece moved diagonally
+            else:
+
+                # Determines the step for the range function to come up with values for diagonal
+                if pos2x > pos1x:
+                    step = 1
+                else:
+                    step = -1
+                # Makes the list of the x values along the diagonal
+                lst_x = [x for x in range(pos1x+step, pos2x, step)]  # adds step so we don't consider where the piece currently is
+
+                # Determines the step for the range function to come up with values for diagonal
+                if pos2y > pos1y:
+                    step = 1
+                else:
+                    step = -1
+                # Makes the list of the y values along the diagonal
+                lst_y = [x for x in range(pos1y+step, pos2y, step)]  # adds step so we don't consider where the piece currently is
+                for x, y in zip(lst_x, lst_y):
+                    in_the_way.append(self._board[y][x])
+
+        return in_the_way
+
+    def is_piece_in_the_way(self, pos1: tuple, pos2: tuple) -> bool:
+        """
+        Checks if there are any pieces in the way between two different positions on the board
+        :param pos1: The position as a tuple of indices of where the first piece is
+        :param pos2: The position as a tuple of indices of where the first piece would like to go
+        :return: True if there are pieces in the way, false if not
+        """
+        in_the_way = self.pieces_in_the_way(pos1, pos2)
+        if in_the_way.count(None) != len(in_the_way):
+            return True
+        else:
+            return False
 
     def switch_turn(self):
+        """
+        Switches the turn from white to black or black to white
+        """
         self._turn *= -1
 
     def get_piece_from_position(self, position: tuple) -> Piece:
@@ -95,6 +165,8 @@ class Board:
         :param position: A tuple of integers of the indices of the position desired
         :return: A piece object or None if no object is returned
         """
+        if position[0] < 0 or position[1] < 0:
+            raise IndexError("The desired position is out of bounds of the board")
         try:  # ensures the position is actually on the board
             piece = self._board[position[1]][position[0]]
         except IndexError:
@@ -118,8 +190,8 @@ class Board:
                 return False
             else:
                 raise ValueError("The board at this point is neither empty or a piece. It has a type of {type1} and has"
-                                 " a value of {value}".format(type1 = type(self._board[position[0]][position[1]]),
-                                                              value = self._board[position[0]][position[1]]))
+                                 " a value of {value}".format(type1 = type(self._board[position[1]][position[0]]),
+                                                              value = self._board[position[1]][position[0]]))
         except IndexError:
             raise IndexError("The desired position is out of bounds of the board")
 
