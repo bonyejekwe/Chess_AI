@@ -76,13 +76,13 @@ class Board:
         piece2 = self.get_piece_from_position(pos2)
 
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
-            self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
             piece1.move(pos2x, pos2y)
+            self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
 
         else:  # if the place is not empty
             if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team it moves it and takes the other piece
-                self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
                 piece1.move(pos2x, pos2y)  # moves the individual piece object
+                self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
                 self._captured.append(piece2)  # adds the captured piece to an array of captured pieces
                 return piece2  # returns the piece captured
             else:  # catches the error when you try and capture a piece of the same team
