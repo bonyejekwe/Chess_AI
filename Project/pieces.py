@@ -1,5 +1,8 @@
 # pieces.py:  defines classes for each chess piece type
-# TODO implement a list of legal moves for each piece
+# TODO: figure out how capturing is going to work with the pawn
+# TODO: figure out how en-passant is going to work with the pawn (time permitting)
+# TODO: figure out how castling is going to work with king and rook (started)
+
 
 class InvalidMoveError(Exception):
 
@@ -19,6 +22,8 @@ class Piece:
         self._xpos = xpos
         self._ypos = ypos
         self._color = color
+        self._worth = 1
+        self._was_moved = False
 
     def get_color(self):
         return self._color  # if self._color == 1: # return "white" # else: # return "black"
@@ -26,16 +31,28 @@ class Piece:
     def get_position(self):
         return self._xpos, self._ypos
 
+    def get_worth(self):
+        return self._worth
+
+    def was_moved(self):
+        return self._was_moved
+
     def move(self, new_xpos, new_ypos):
         if (0 <= new_xpos <= 7) and (0 <= new_ypos <= 7):
             self._xpos = new_xpos
             self._ypos = new_ypos
+            self._was_moved = True
         else:
             raise InvalidBoardPlacementError(new_xpos, new_ypos)
 
     def legal_moves(self):
-        # return []
-        pass
+        moves = []
+        for y in range(8):
+            for x in range(8):
+                if (0 <= x <= 7) and (0 <= y <= 7):
+                    if not (x == self._xpos and y == self._ypos):
+                        moves.append((x, y))
+        return moves
 
 
 class Pawn(Piece):
@@ -44,13 +61,15 @@ class Pawn(Piece):
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
+        self._worth = 1
 
     def move(self, new_xpos, new_ypos):
-
-        if new_ypos - self._ypos == self._color:  # check condition validity
-            super().move(new_xpos, new_ypos)
-        elif (self._ypos == 1 and self.get_color() == 1) or (self._ypos == 6 and self.get_color() == -1):
-            super().move(new_xpos, new_ypos)  # first move up two
+        if abs(new_xpos - self._xpos) <= 1:
+            if new_ypos - self._ypos == self._color:  # check condition validity
+                super().move(new_xpos, new_ypos)
+            elif ((self._ypos == 1 and self.get_color() == 1 and new_ypos == 3) or
+                  (self._ypos == 6 and self.get_color() == -1 and new_ypos == 4)):
+                super().move(new_xpos, new_ypos)  # first move up two
         else:
             raise InvalidMoveError(new_xpos, new_ypos)
 
@@ -58,21 +77,22 @@ class Pawn(Piece):
         moves = []
         for y in range(8):
             for x in range(8):
-                if y - self._ypos == self._color or \
-                        ((self._ypos == 1 and self.get_color() == 1) or (self._ypos == 6 and self.get_color() == -1)):
+                if (abs(x - self._xpos) <= 1 and (y - self._ypos == self._color or
+                        (self._ypos == 1 and self.get_color() == 1 and y == 3) or
+                        (self._ypos == 6 and self.get_color() == -1 and y == 4))):
                     if not (x == self._xpos and y == self._ypos):
                         moves.append((x, y))
         return moves
 
     def __str__(self):
-        return "P"  # (actual representation)
-        # return f"P: ({self._xpos}, {self._ypos})"  # test representation
+        return "P"
 
 
 class Knight(Piece):
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
+        self._worth = 3
 
     def move(self, new_xpos, new_ypos):
         if ((abs(new_xpos - self._xpos) == 1 and abs(new_ypos - self._ypos) == 2)
@@ -99,6 +119,7 @@ class Bishop(Piece):
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
+        self._worth = 3
 
     def move(self, new_xpos, new_ypos):
         if abs(new_xpos - self._xpos) == abs(new_ypos - self._ypos):  # moves diagonally
@@ -123,6 +144,7 @@ class Rook(Piece):
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
+        self._worth = 5
 
     def move(self, new_xpos, new_ypos):
         if (new_xpos - self._xpos) * (new_ypos - self._ypos) == 0:  # moves horizontally or vertically
@@ -147,6 +169,7 @@ class Queen(Piece):
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
+        self._worth = 9
 
     def move(self, new_xpos, new_ypos):
         if ((new_xpos - self._xpos) * (new_ypos - self._ypos) == 0 or
@@ -172,6 +195,7 @@ class King(Piece):
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
+        self._worth = 0
 
     def move(self, new_xpos, new_ypos):
         if abs(new_xpos - self._xpos <= 1) and abs(new_ypos - self._ypos <= 1):  # moves to adjacent square
