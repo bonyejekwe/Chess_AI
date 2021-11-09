@@ -63,13 +63,13 @@ class Pawn(Piece):
         super().__init__(xpos, ypos, color)
         self._worth = 1
 
+    def first_move(self, new_ypos):
+        """Returns true if pawn wants to move 2 spaces for first move"""
+        return not Pawn.was_moved(self) and new_ypos - self._ypos == 2 * self._color
+
     def move(self, new_xpos, new_ypos):
-        if abs(new_xpos - self._xpos) <= 1:
-            if new_ypos - self._ypos == self._color:  # check condition validity
-                super().move(new_xpos, new_ypos)
-            elif ((self._ypos == 1 and self.get_color() == 1 and new_ypos == 3) or
-                  (self._ypos == 6 and self.get_color() == -1 and new_ypos == 4)):
-                super().move(new_xpos, new_ypos)  # first move up two
+        if (abs(new_xpos - self._xpos) <= 1) and ((new_ypos - self._ypos == self._color) or Pawn.first_move(self, new_ypos)):
+            super().move(new_xpos, new_ypos)  # first move up two
         else:
             raise InvalidMoveError(new_xpos, new_ypos)
 
@@ -77,9 +77,7 @@ class Pawn(Piece):
         moves = []
         for y in range(8):
             for x in range(8):
-                if (abs(x - self._xpos) <= 1 and (y - self._ypos == self._color or
-                        (self._ypos == 1 and self.get_color() == 1 and y == 3) or
-                        (self._ypos == 6 and self.get_color() == -1 and y == 4))):
+                if (abs(x - self._xpos) <= 1) and ((y - self._ypos == self._color) or Pawn.first_move(self, y)):
                     if not (x == self._xpos and y == self._ypos):
                         moves.append((x, y))
         return moves

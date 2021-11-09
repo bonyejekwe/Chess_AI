@@ -149,3 +149,18 @@ print(F"Legal moves: {p.legal_moves()}")
 p.move(3, 4)
 print(f"{p}: {p.get_position()}")
 print(F"Legal moves: {p.legal_moves()}")
+
+
+print('\n')
+p = Pawn(3, 6, -1)
+print(f"Color: {p.get_color()}")
+print(f"Worth: {p.get_worth()}")
+print(f"{p}: {p.get_position()}")
+print(F"Legal moves: {p.legal_moves()}")
+p.move(3, 5)
+print(f"{p}: {p.get_position()}")
+print(F"Legal moves: {p.legal_moves()}")
+# p.move(3, 3) # should be invalid move
+p.move(3, 4)
+print(f"{p}: {p.get_position()}")
+print(F"Legal moves: {p.legal_moves()}")
