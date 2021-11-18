@@ -1,0 +1,12 @@
+Castling
+Pawn Promotion
+En Passant???
+Legal Moves
+  -Dictionary Key:Piece Value:List of Positions it can go to (includes captures)
+Check/Checkmate
+GUI
+AI (waiting on legal moves)
+  -Figure out possible scoring methods
+  -Figure out how to implement different weight
+  -Figure out how to evolve those weights
+API?????????????????????????
