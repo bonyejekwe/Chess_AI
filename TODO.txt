@@ -10,3 +10,9 @@ AI (waiting on legal moves)
   -Figure out how to implement different weight
   -Figure out how to evolve those weights
 API?????????????????????????
+
+
+From Rachlin...
+"I think skipping en passant in favor of focusing on the AI is a very reasonable tradeoff.   Assuming that a pawn always converts to a queen would also be ok.    Heck even not dealing with castling would be acceptable to me. 
+
+AI AI AI"
