@@ -69,5 +69,6 @@ class AI:
         pass
 
 b = Board()
+b.start_game()
 AI.scoring(b)
 
