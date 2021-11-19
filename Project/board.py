@@ -53,7 +53,8 @@ class Board:
         """
         b = [[None for i in range(8)] for i in range(8)]
         b[5][0] = Pawn(0,5,1)
-        b[2][0] = Pawn(0,2,-1)
+        b[1][0] = Pawn(0,1,-1)
+        b[0][1] = Pawn(1,0,1)
         self._board = b
         self._turn = 1
 
@@ -104,6 +105,8 @@ class Board:
                 piece1.move(pos2x, pos2y)  # moves the individual piece object
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
                 self._captured.append(piece2)  # adds the captured piece to an array of captured pieces
+                if isinstance(piece1, Pawn) and pos2y == 7 or pos2y == 0:  # Pawn promotion after capture
+                    self._board[pos2y][pos2x] = Queen(pos2x, pos2y, piece1.get_color())
                 return piece2  # returns the piece captured
             else:  # catches the error when you try and capture a piece of the same team
                 raise Board.WrongTeamError("Trying to capture piece at {pos} but it is the same team of {team}".format(
