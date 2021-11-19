@@ -47,6 +47,17 @@ class Board:
         self._board.append(black_back_row)
         self._turn = 1  # sets the turn to white
 
+    def start_test_game(self):
+        """
+        Starts a game for testing piece movement
+        """
+        b = [[None for i in range(8)] for i in range(8)]
+        b[5][0] = Pawn(0,5,1)
+        b[2][0] = Pawn(0,2,-1)
+        self._board = b
+        self._turn = 1
+
+
     def move_piece(self, position1: tuple, position2: tuple) -> Union[Piece, None]:
         """
         Moves a piece from one position to another
@@ -76,8 +87,17 @@ class Board:
         piece2 = self.get_piece_from_position(pos2)
 
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
-            piece1.move(pos2x, pos2y)
-            self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
+            if not isinstance(piece1, Pawn):
+                piece1.move(pos2x, pos2y)
+                self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
+            else:  # Pawn promotion implementation
+                print("here")
+                if pos2y == 7 or pos2y == 0:
+                    print('here2')
+                    piece1.move(pos2x, pos2y)
+                    piece1 = Queen(pos2x, pos2y, piece1.get_color())
+                    self._board[pos1y][pos1x], self._board[pos2y][pos2x] = None, piece1
+
 
         else:  # if the place is not empty
             if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team it moves it and takes the other piece
