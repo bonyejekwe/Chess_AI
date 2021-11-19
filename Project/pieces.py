@@ -203,9 +203,9 @@ class King(Piece):
 
     def legal_moves(self):
         moves = []
-        for y in range(8):
-            for x in range(8):
-                if abs(x - self._xpos <= 1) and abs(y - self._ypos <= 1):
+        for x in range(self._xpos-1, self._xpos+2):
+            for y in range(self._ypos - 1, self._ypos + 2):
+                if 0 <= x <= 7 and 0 <= y <= 7:
                     if not (x == self._xpos and y == self._ypos):
                         moves.append((x, y))
         return moves

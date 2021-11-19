@@ -265,3 +265,57 @@ class Board:
                 string += "{:>8}".format(str(j))
             string += "\n"
         return string
+
+    def is_in_check(self, c):
+        # this can be abstracted into a get position of piece function if it is needed
+        # (color) is in check
+        for y in range(0, 8):
+            for x in self._board[y]:
+                if type(x) == King and x.get_color() == c:
+                    pos_x = self._board[y].index(x)
+                    pos_y = y
+                    print(pos_x, pos_y)
+        possible_piece = []
+        for i in range(0, 16):
+            # up and down
+            possible_piece.append((pos_x, i - pos_y))
+            # left and right
+            possible_piece.append((i - pos_x, pos_y))
+            # down and right
+            possible_piece.append((pos_x + i, pos_y + i))
+            # down and left
+            possible_piece.append((pos_x - i, pos_y + i))
+            # up and left
+            possible_piece.append((pos_x - i, pos_y - i))
+            # up and right
+            possible_piece.append((pos_x + i, pos_y - i))
+        # 8 knight squares
+        possible_piece.append((pos_x + 2, pos_y - 1))
+        possible_piece.append((pos_x + 2, pos_y + 1))
+        possible_piece.append((pos_x - 2, pos_y - 1))
+        possible_piece.append((pos_x - 2, pos_y + 1))
+        possible_piece.append((pos_x + 1, pos_y - 2))
+        possible_piece.append((pos_x + 1, pos_y + 2))
+        possible_piece.append((pos_x - 1, pos_y - 2))
+        possible_piece.append((pos_x - 1, pos_y + 2))
+        # remove duplicates
+        possible_piece = list(set(possible_piece))
+        new_pos = []
+        for x in possible_piece:
+            if 7 >= x[0] >= 0 and 7 >= x[1] >= 0:
+                new_pos.append(x)
+
+        try:
+            new_pos.remove((pos_x, pos_y))
+        except ValueError:
+            pass
+        checks = []
+        for x in new_pos:
+            y = self.get_piece_from_position(x)
+            if y is not None:
+                if (y.get_color() != c) and ((pos_x,pos_y) in y.legal_moves()) and (type(y) == Knight or not self.is_piece_in_the_way(x, (pos_x, pos_y))):
+                    checks.append(y)
+        if len(checks) != 0:
+            return True
+        else:
+            return False

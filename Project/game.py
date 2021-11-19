@@ -30,6 +30,7 @@ def move(game):
         mv_string = "Location of piece, ie A7: "
         ds_string = "Desired position, ie A6: "
 
+    print(game.is_in_check(game._turn))
     # take positions from input
     moving_piece = list(input(mv_string))
     moving_piece[0] = moving_piece[0].upper()
