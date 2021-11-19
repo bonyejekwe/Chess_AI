@@ -1,5 +1,6 @@
 from pieces import *
 from typing import Union
+import collections
 
 class Board:
 
@@ -28,6 +29,7 @@ class Board:
         self._turn = 1  # sets the turn to white
         self._captured = list()
 
+
     def start_game(self):
         """
         Starts game, fills in all pieces in the standard starting
@@ -49,12 +51,14 @@ class Board:
 
     def start_test_game(self):
         """
-        Starts a game for testing piece movement
+        Starts a game for testing piece movement and game logic
         """
         b = [[None for i in range(8)] for i in range(8)]
-        b[5][0] = Pawn(0,5,1)
-        b[1][0] = Pawn(0,1,-1)
-        b[0][1] = Pawn(1,0,1)
+        b[0][4] = King(4,0,1)
+        b[7][4] = King(4,7,-1)
+        #b[0][0] = Rook(0,0,1)
+        b[6][4] = Rook(4,6,-1)
+        b[1][4] = Rook(4,1,1)
         self._board = b
         self._turn = 1
 
@@ -126,7 +130,6 @@ class Board:
         piece1 = self.get_piece_from_position(pos1)
         in_the_way = []
         # Checks to see if there are any pieces blocking each other
-        # TODO Finish this
         if not isinstance(piece1, Knight):  # Knight can jump over pieces so it doesn't matter
             difx = pos2x - pos1x  # difference in y
             dify = pos2y - pos1y  # difference in x
@@ -342,3 +345,54 @@ class Board:
             return True
         else:
             return False
+
+    @staticmethod
+    def _is_white(piece: Piece) -> bool:
+        """
+        Checks if a certain piece is white or not
+        :param piece: the piece which you would like to check if it is white
+        :return: True if white, false otherwise
+        """
+        return isinstance(piece, Piece) and piece.get_color() == 1
+
+    def legal_moves(self) -> dict:
+        """
+        Finds all possible legal moves of a certain color and returns them as a dictionary. Where the keys are
+        a tuple as a position, and the values is a list of tuples each being a position. Only finds the legal moves of
+        the pieces turn it is. If it is white's turn it only checks white's legal moves
+        :return: Dictionary, key is tuple of position of a piece, value is a list of tuples as positions to where
+        they key can move to.
+        """
+        white = []
+        black = []
+        possible_moves = collections.defaultdict(list)
+        for i in self._board:
+            for piece in i:
+                if isinstance(piece, Piece):
+                    if self._is_white(piece):
+                        white.append(piece)
+                    else:
+                        black.append(piece)
+        if self.get_current_turn() == 1:
+            consider = white
+        else:
+            consider = black
+        for piece in consider:
+            possible = piece.legal_moves()
+            pos1x, pos1y = piece.get_position()
+            for e in possible:
+                if not self.is_piece_in_the_way(piece.get_position(), e):
+                    print("Before")
+                    print(self.__repr__())
+                    piece2 = self._board[e[1]][e[0]]
+                    if isinstance(piece2, Piece) and self.validate_turn_color(piece2):
+                        continue
+                    self._board[pos1y][pos1x], self._board[e[1]][e[0]] = None, self._board[pos1y][pos1x]
+                    if not self.is_in_check(self.get_current_turn()):
+                        possible_moves[piece.get_position()].append(e)
+                    print("During")
+                    print(self.__repr__())
+                    self._board[pos1y][pos1x], self._board[e[1]][e[0]] = self._board[e[1]][e[0]], piece2
+                    print("After")
+                    print(self.__repr__())
+        return possible_moves
