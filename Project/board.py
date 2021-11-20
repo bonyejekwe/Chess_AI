@@ -31,6 +31,7 @@ class Board:
         self._move_count = 0
         self._turn = 1  # sets the turn to white
         self._captured = list()
+        self._game_over = False  # change when checkmate happens
 
 
     def start_game(self):
@@ -403,3 +404,6 @@ class Board:
                     #  print("After")
                     #  print(self.__repr__())
         return possible_moves
+
+    def is_game_over(self):
+        return self._game_over
