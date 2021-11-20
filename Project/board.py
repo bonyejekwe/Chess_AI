@@ -16,6 +16,9 @@ class Board:
     class PieceInTheWayError(Exception):
         pass
 
+    class NoKing(Exception):
+        pass
+
     def __init__(self):
         """
         board is 2d array of pieces and None objects. White is at the top, black is at the bottom so we can index the
@@ -293,15 +296,19 @@ class Board:
         return string
 
     def is_in_check(self, c):
-        # this can be abstracted into a get position of piece function if it is needed
         # (color) is in check
         for y in range(0, 8):
             for x in self._board[y]:
                 if type(x) == King and x.get_color() == c:
                     pos_x = self._board[y].index(x)
                     pos_y = y
-                    print(pos_x, pos_y)
         possible_piece = []
+
+        try:
+            pos_x
+        except NameError:
+            raise Board.NoKing(f'{c} has no king.')
+
         for i in range(0, 16):
             # up and down
             possible_piece.append((pos_x, i - pos_y))
