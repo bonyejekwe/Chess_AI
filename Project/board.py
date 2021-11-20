@@ -389,17 +389,17 @@ class Board:
             pos1x, pos1y = piece.get_position()
             for e in possible:
                 if not self.is_piece_in_the_way(piece.get_position(), e):
-                    print("Before")
-                    print(self.__repr__())
+                    #  print("Before")
+                    #  print(self.__repr__())
                     piece2 = self._board[e[1]][e[0]]
                     if isinstance(piece2, Piece) and self.validate_turn_color(piece2):
                         continue
                     self._board[pos1y][pos1x], self._board[e[1]][e[0]] = None, self._board[pos1y][pos1x]
                     if not self.is_in_check(self.get_current_turn()):
                         possible_moves[piece.get_position()].append(e)
-                    print("During")
-                    print(self.__repr__())
+                    #  print("During")
+                    #  print(self.__repr__())
                     self._board[pos1y][pos1x], self._board[e[1]][e[0]] = self._board[e[1]][e[0]], piece2
-                    print("After")
-                    print(self.__repr__())
+                    #  print("After")
+                    #  print(self.__repr__())
         return possible_moves
