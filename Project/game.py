@@ -8,9 +8,10 @@ def main():
     ai = AI(-1, "full")
     game.start_game()
     turn(game, ai)
+    # turn(game)  # test purposes
 
 
-def turn(game, ai_game):
+def turn(game, ai_game=AI(0, "full")):  # effectively defaults to no AI for game
     while game.is_game_over() is False:
         # TODO change the game_over variable in board class once checkmate occurs
         print(game.__repr__())

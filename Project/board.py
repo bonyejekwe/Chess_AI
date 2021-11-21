@@ -1,6 +1,10 @@
+
+# board.py: defines the board object
+
 from pieces import *
 from typing import Union
 import collections
+
 
 class Board:
 
@@ -33,7 +37,6 @@ class Board:
         self._captured = list()
         self._game_over = False  # change when checkmate happens
 
-
     def start_game(self):
         """
         Starts game, fills in all pieces in the standard starting
@@ -58,14 +61,13 @@ class Board:
         Starts a game for testing piece movement and game logic
         """
         b = [[None for i in range(8)] for i in range(8)]
-        b[0][4] = King(4,0,1)
-        b[7][4] = King(4,7,-1)
-        #b[0][0] = Rook(0,0,1)
-        b[6][4] = Rook(4,6,-1)
-        b[1][4] = Rook(4,1,1)
+        b[0][4] = King(4, 0, 1)
+        b[7][4] = King(4, 7, -1)
+        # b[0][0] = Rook(0, 0, 1)
+        b[6][4] = Rook(4, 6, -1)
+        b[1][4] = Rook(4, 1, 1)
         self._board = b
         self._turn = 1
-
 
     def move_piece(self, position1: tuple, position2: tuple) -> Union[Piece, None]:
         """
@@ -81,12 +83,12 @@ class Board:
         pos2x, pos2y = pos2
 
         if self.is_position_empty(pos1):  # Trying to move a piece at a position that has no piece
-            raise Board.EmptySpaceError("The space at {pos} is empty".format(pos = position1))
+            raise Board.EmptySpaceError("The space at {pos} is empty".format(pos=position1))
         piece1 = self.get_piece_from_position(pos1)
 
         if not self.validate_turn_color(piece1):  # Checks to see if it is that pieces turn
             raise Board.WrongTeamError("It is team {t1}'s turn, tried to move piece "
-                                       "from team {t2}".format(t1 = self._turn, t2 = piece1.get_color()))
+                                       "from team {t2}".format(t1=self._turn, t2=piece1.get_color()))
 
         # Checks to see if there are any pieces in between where a piece is and where it wants to go
         if self.is_piece_in_the_way(pos1, pos2):
@@ -96,17 +98,14 @@ class Board:
         piece2 = self.get_piece_from_position(pos2)
 
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
-            if not isinstance(piece1, Pawn):
+            if not (isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0)):  # regular move
                 piece1.move(pos2x, pos2y)
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
             else:  # Pawn promotion implementation
                 print("here")
-                if pos2y == 7 or pos2y == 0:
-                    print('here2')
-                    piece1.move(pos2x, pos2y)
-                    piece1 = Queen(pos2x, pos2y, piece1.get_color())
-                    self._board[pos1y][pos1x], self._board[pos2y][pos2x] = None, piece1
-
+                piece1.move(pos2x, pos2y)
+                piece1 = Queen(pos2x, pos2y, piece1.get_color())
+                self._board[pos1y][pos1x], self._board[pos2y][pos2x] = None, piece1
 
         else:  # if the place is not empty
             if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team it moves it and takes the other piece
@@ -118,7 +117,7 @@ class Board:
                 return piece2  # returns the piece captured
             else:  # catches the error when you try and capture a piece of the same team
                 raise Board.WrongTeamError("Trying to capture piece at {pos} but it is the same team of {team}".format(
-                    pos = position2, team = self._turn))
+                    pos=position2, team=self._turn))
         return None
 
     def pieces_in_the_way(self, pos1: tuple, pos2: tuple) -> list:
@@ -167,7 +166,7 @@ class Board:
                 lst_y = list(range(pos1y+step, pos2y, step))  # adds step so we don't consider where the piece currently is
                 for x, y in zip(lst_x, lst_y):
                     in_the_way.append(self._board[y][x])
-        #print(in_the_way)
+        # print(in_the_way)
         return in_the_way
 
         # noinspection PyUnreachableCode
@@ -184,7 +183,6 @@ class Board:
         the pieces along the diagonal and adds each individual one to the array in_the_way
                 
         """
-
 
     def is_piece_in_the_way(self, pos1: tuple, pos2: tuple) -> bool:
         """
@@ -219,8 +217,8 @@ class Board:
             raise IndexError("The desired position is out of bounds of the board")
 
         if not (isinstance(piece, Piece) or piece is None):  # makes sure the position actually holds a piece or is empty
-            raise ValueError("Piece should not be of type {t} and value {v}".format(t = type(piece),
-                                                                                    v = piece))
+            raise ValueError("Piece should not be of type {t} and value {v}".format(t=type(piece),
+                                                                                    v=piece))
         return piece
 
     def is_position_empty(self, position: tuple) -> bool:
@@ -236,8 +234,8 @@ class Board:
                 return False
             else:
                 raise ValueError("The board at this point is neither empty or a piece. It has a type of {type1} and has"
-                                 " a value of {value}".format(type1 = type(self._board[position[1]][position[0]]),
-                                                              value = self._board[position[1]][position[0]]))
+                                 " a value of {value}".format(type1=type(self._board[position[1]][position[0]]),
+                                                              value=self._board[position[1]][position[0]]))
         except IndexError:
             raise IndexError("The desired position is out of bounds of the board")
 
@@ -281,7 +279,7 @@ class Board:
         return self._turn
 
     def __repr__(self):
-        alphabet = ["A","B", "C", "D", "E", "F", "G", "H"]
+        alphabet = ["A", "B", "C", "D", "E", "F", "G", "H"]
         num = 1
         string = " "
         for letter in alphabet:
@@ -347,7 +345,7 @@ class Board:
         for x in new_pos:
             y = self.get_piece_from_position(x)
             if y is not None:
-                if (y.get_color() != c) and ((pos_x,pos_y) in y.legal_moves()) and (type(y) == Knight or not self.is_piece_in_the_way(x, (pos_x, pos_y))):
+                if (y.get_color() != c) and ((pos_x, pos_y) in y.legal_moves()) and (type(y) == Knight or not self.is_piece_in_the_way(x, (pos_x, pos_y))):
                     checks.append(y)
         if len(checks) != 0:
             return True
