@@ -1,8 +1,7 @@
+
 # pieces.py:  defines classes for each chess piece type
 # TODO: figure out how capturing is going to work with the pawn
-# TODO: figure out how en-passant is going to work with the pawn (time permitting)
-# TODO: figure out how castling is going to work with king and rook (started)
-
+# TODO: figure out how en-passant and castling (if time permits)
 
 class InvalidMoveError(Exception):
 
@@ -56,20 +55,30 @@ class Piece:
 
 
 class Pawn(Piece):
-    """Need to add additional (static?) methods for pawn movement implementation (ie: en passant, promotion).
-        The movement according on color is based on: "white" = 1, "black" = -1 for simplicity"""
+    """The movement according on color is based on: "white" = 1, "black" = -1 for simplicity"""
+    # TODO implement capturing correctly
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
         self._worth = 1
+        self._is_capturing = False
 
     def first_move(self, new_ypos):
         """Returns true if pawn wants to move 2 spaces for first move"""
         return not Pawn.was_moved(self) and new_ypos - self._ypos == 2 * self._color
 
+    def is_capturing(self):
+        # TODO reimplement this correctly!!!!!!!
+        return self._is_capturing
+
+    def set_capturing(self, status):
+        self._is_capturing = status  # True or False
+
     def move(self, new_xpos, new_ypos):
-        if (abs(new_xpos - self._xpos) <= 1) and ((new_ypos - self._ypos == self._color) or Pawn.first_move(self, new_ypos)):
-            super().move(new_xpos, new_ypos)  # first move up two
+        if (new_ypos - self._ypos == self._color) or Pawn.first_move(self, new_ypos):
+            if ((abs(new_xpos - self._xpos) <= 1) and self.is_capturing()) or new_xpos == self._xpos:
+                super().move(new_xpos, new_ypos)  # first move up two
+
         else:
             raise InvalidMoveError(new_xpos, new_ypos)
 
@@ -77,13 +86,17 @@ class Pawn(Piece):
         moves = []
         for y in range(8):
             for x in range(8):
-                if (abs(x - self._xpos) <= 1) and ((y - self._ypos == self._color) or Pawn.first_move(self, y)):
-                    if not (x == self._xpos and y == self._ypos):
-                        moves.append((x, y))
+                if (y - self._ypos == self._color) or Pawn.first_move(self, y):
+                    if (abs(x - self._xpos) <= 1 and self.is_capturing()) or x == self._xpos:
+                        if not (x == self._xpos and y == self._ypos):
+                            moves.append((x, y))
         return moves
 
     def __str__(self):
-        return "P"
+        if self.get_color() == 1:
+            return "P"
+        else:
+            return "P'"
 
 
 class Knight(Piece):
@@ -110,7 +123,10 @@ class Knight(Piece):
         return moves
 
     def __str__(self):
-        return "N"
+        if self.get_color() == 1:
+            return "N"
+        else:
+            return "N'"
 
 
 class Bishop(Piece):
@@ -135,7 +151,10 @@ class Bishop(Piece):
         return moves
 
     def __str__(self):
-        return "B"
+        if self.get_color() == 1:
+            return "B"
+        else:
+            return "B'"
 
 
 class Rook(Piece):
@@ -160,7 +179,10 @@ class Rook(Piece):
         return moves
 
     def __str__(self):
-        return "R"
+        if self.get_color() == 1:
+            return "R"
+        else:
+            return "R'"
 
 
 class Queen(Piece):
@@ -186,7 +208,10 @@ class Queen(Piece):
         return moves
 
     def __str__(self):
-        return "Q"
+        if self.get_color() == 1:
+            return "Q"
+        else:
+            return "Q'"
 
 
 class King(Piece):
@@ -211,4 +236,7 @@ class King(Piece):
         return moves
 
     def __str__(self):
-        return "K"
+        if self.get_color() == 1:
+            return "K"
+        else:
+            return "K'"
