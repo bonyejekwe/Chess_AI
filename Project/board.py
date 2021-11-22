@@ -112,7 +112,7 @@ class Board:
                 piece1.move(pos2x, pos2y)  # moves the individual piece object
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
                 self._captured.append(piece2)  # adds the captured piece to an array of captured pieces
-                if isinstance(piece1, Pawn) and pos2y == 7 or pos2y == 0:  # Pawn promotion after capture
+                if isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0):  # Pawn promotion after capture
                     self._board[pos2y][pos2x] = Queen(pos2x, pos2y, piece1.get_color())
                 return piece2  # returns the piece captured
             else:  # catches the error when you try and capture a piece of the same team
@@ -404,4 +404,8 @@ class Board:
         return possible_moves
 
     def is_game_over(self):
+        if len(self.legal_moves()) == 0:
+            print(f'checkmate')
+            self._game_over = True
         return self._game_over
+

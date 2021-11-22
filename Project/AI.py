@@ -69,7 +69,7 @@ class AI:
         start_pos, end_pos = random.choices(moves, weights)[0]
         start_pos, end_pos = self.num_pos_to_letter_pos(start_pos), self.num_pos_to_letter_pos(end_pos)
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
-
+        print(f"moving from {start_pos} to {end_pos}")
         # Note: Above, weights are stored/edited in a list of lists, but it can also be done using a dictionary as shown
         # below. Both implementations are shown in full, using a dict might be faster/have less overhead. Choice for one
         # over the other likely depends on how often and in what way we are adjusting the weights before choosing

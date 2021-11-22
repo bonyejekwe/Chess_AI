@@ -12,12 +12,14 @@ def main():
 
 
 def turn(game, ai_game=AI(0, "full")):  # effectively defaults to no AI for game
-    while game.is_game_over() is False:
+    i = 0
+    while game.is_game_over() is False and i < 500:
         # TODO change the game_over variable in board class once checkmate occurs
         print(game.__repr__())
         move(game, ai_game)
         game.switch_turn()
-        turn(game, ai_game)
+        # turn(game, ai_game)
+        i += 1
     # if end state is met (checkmate, forfeit)
     #   sys.exit(0)
 

@@ -53,6 +53,10 @@ class Piece:
                         moves.append((x, y))
         return moves
 
+    def can_move_to(self, new_xpos, new_ypos):
+        """Return true if piece can move to (new_xpos, new_ypos), false otherwise"""
+        return (new_xpos, new_ypos) in self.legal_moves()
+
 
 class Pawn(Piece):
     """The movement according on color is based on: "white" = 1, "black" = -1 for simplicity"""
