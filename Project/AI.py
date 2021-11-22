@@ -2,9 +2,8 @@
 # TODO IDEAS:
 #  *use the general scoring method to influence decision making for the AI
 #  *implement a way to determine if a piece is in danger (possibly through piece or board class).
-#  ****implement different game modes showing different stages of AI development (ie. "random", "greedy", "full", etc.)
-#  ---greedy: does best possible evaluation w/o considering past or future mov
-#  ---full: our final implementation (can rename)
+#  ****implement different game modes showing different stages of AI development (ie. "random", "basic", "medium", etc.)
+#  -so far "basic" just favors capturing pieces of equal or lesser value, and favors not moving the king (need add more)
 
 
 # TODO: The AI should retrieve all the information about its pieces to use (ie. every piece's position/color/worth/
@@ -14,7 +13,7 @@
 
 import random
 from board import Board
-# from evaluate import Evaluation # how to evaluate moves (to be implemented)
+from evaluate import Evaluation  # how to evaluate moves (to be implemented)
 import functools
 
 
@@ -63,27 +62,16 @@ class AI:
 
     def make_move(self, board):
         """Choose (make a weighted choice) a move for the AI to make and make the move """
-        moves_list = [[m, 1] for m in self._legal_moves]  # all weights initialized as 1
+        moves_dict = {m: 1 for m in self._legal_moves}
         # .... # adjust weights according to AI decision making criteria
-        moves, weights = [[e[0] for e in moves_list], [e[1] for e in moves_list]]
+        e = Evaluation(moves_dict, board)
+        moves_dict = e.evaluated(self.mode)
+        # make the move
+        lis = [e for e in list(moves_dict.items())]
+        moves, weights = [elem[0] for elem in lis], [elem[1] for elem in lis]
+        if min(weights) < 0:
+            weights = [num - min(weights) for num in weights]
         start_pos, end_pos = random.choices(moves, weights)[0]
         start_pos, end_pos = self.num_pos_to_letter_pos(start_pos), self.num_pos_to_letter_pos(end_pos)
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
-        # Note: Above, weights are stored/edited in a list of lists, but it can also be done using a dictionary as shown
-        # below. Both implementations are shown in full, using a dict might be faster/have less overhead. Choice for one
-        # over the other likely depends on how often and in what way we are adjusting the weights before choosing
-
-        # NOTE: Dictionary Implementation:
-        # moves_dict = { m:1 for m in self._legal_moves }
-        # ....  # adjust weights
-        # l = [ (e,moves_dict(e)) for e in moves_dict.keys() ]
-        # moves, weights = [ e[0] for e in l], [e[1] for e in l] ]
-        # start_pos, end_pos = random.choices(moves, weights)
-        # ....
-
-
-b = Board()
-b.start_game()
-b_lists = b.get_board()
-AI.scoring(b_lists)

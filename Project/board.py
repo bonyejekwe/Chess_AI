@@ -409,3 +409,5 @@ class Board:
             self._game_over = True
         return self._game_over
 
+    def winner(self):
+        return self.get_current_turn()
