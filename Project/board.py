@@ -404,9 +404,11 @@ class Board:
         return possible_moves
 
     def is_game_over(self):
-        if len(self.legal_moves()) == 0:
+        if len(self.legal_moves()) == 0 and self.is_in_check(self._turn):
             print(f'checkmate')
             self._game_over = True
+        elif len(self.legal_moves()) == 0:
+            print(f'stalemate')
         return self._game_over
 
     def winner(self):
