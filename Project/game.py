@@ -45,7 +45,8 @@ def turn(game, ai_game, ai_game2=False):  # effectively defaults to no AI for ga
         game.switch_turn()
         # turn(game, ai_game, ai_game2)
         i += 1
-        print(i)
+        for _ in range(10):
+            print(f"Turn #: {i}...")
         # print(f'captured: {[str(p) for p in game.get_captured()]}')
         # print(game.__repr__())
     if game.is_game_over():

@@ -89,6 +89,7 @@ class AI:
 
         moves = self.format_legal_moves(board)
         best_move = random.choice(moves)
+        print("best move start:'", best_move)
         print(moves)
 
         min_or_max = maximizing_player * maximizing_color  # 1 if they are same (maximizing), -1 if they are different (minimizing)
@@ -102,25 +103,25 @@ class AI:
             curr_eval = self.minimax(b1, depth - 1, -1 * maximizing_player, maximizing_color)[1]
             if (curr_eval - m_eval) * min_or_max > 0:
                 m_eval = curr_eval
-                best_move = curr_eval
+                best_move = move
         return best_move, m_eval
-
 
     def make_move(self, board):
         """Choose (make a weighted choice) a move for the AI to make and make the move """
-        moves_dict = {m: 1 for m in self._legal_moves}
-        # .... # adjust weights according to AI decision making criteria
         if self.mode == "medium":
-            self.minimax(board, 2, self._team, self._team)  # run minimax w/ depth 2
+            start_pos, end_pos = self.minimax(board, 2, self._team, self._team)[0]  # run minimax w/ depth 1
         else:
+            moves_dict = {m: 1 for m in self._legal_moves}
+            # adjust weights according to AI decision making criteria
             e = Evaluation(moves_dict, board)
             moves_dict = e.evaluated(self.mode)
-        # make the move
-        lis = [e for e in list(moves_dict.items())]
-        moves, weights = [elem[0] for elem in lis], [elem[1] for elem in lis]
-        if min(weights) < 0:
-            weights = [num - min(weights) for num in weights]
-        start_pos, end_pos = random.choices(moves, weights)[0]
+            # make the move
+            lis = [e for e in list(moves_dict.items())]
+            moves, weights = [elem[0] for elem in lis], [elem[1] for elem in lis]
+            if min(weights) < 0:
+                weights = [num - min(weights) for num in weights]
+            start_pos, end_pos = random.choices(moves, weights)[0]
         start_pos, end_pos = self.num_pos_to_letter_pos(start_pos), self.num_pos_to_letter_pos(end_pos)
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
+        print(board)
