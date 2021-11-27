@@ -8,6 +8,9 @@ p1 = Piece(0, 0, 1)
 print(f"Color: {p1.get_color()}")
 print(f"Worth: {p1.get_worth()}")
 print(f"Position: {p1.get_position()}")
+p1.move(3, 4)
+print(F"Legal moves: {p1.legal_moves()}")
+
 
 print('\nRook Tests:')
 r = Rook(0, 0, -1)  # 0 = "black"
@@ -15,11 +18,11 @@ print(f"Color: {r.get_color()}")
 print(f"Worth: {r.get_worth()}")
 print(f"{r}: {r.get_position()}")
 print(F"Legal moves: {r.legal_moves()}")
-print(F"Was moved?: {r.was_moved()}")
+print(F"Was moved?: {r.get_was_moved()}")
 r.move(3, 0)
 print(f"{r}: {r.get_position()}")
 print(F"Legal moves: {r.legal_moves()}")
-print(F"Was moved?: {r.was_moved()}")
+print(F"Was moved?: {r.get_was_moved()}")
 # r.move(7, 3)  # should be invalid move
 # print(f"{r}: {r.get_position()}")
 r.move(3, 3)

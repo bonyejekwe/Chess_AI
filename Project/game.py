@@ -12,7 +12,7 @@ from AI import AI
 
 def main():
     winners = []
-    for _ in range(10):
+    for _ in range(7):
         result = run_game(2)  # run AI vs AI (change argument to 1 for player vs AI)
         winners.append(result)
     print("Winners", winners)
@@ -28,7 +28,7 @@ def run_game(num=2):
         ai2 = False
     else:
         ai = AI(-1, "random")
-        ai2 = AI(1, "medium")
+        ai2 = AI(1, "random")
     game.start_game()
     game_winner = turn(game, ai, ai2)  # run the game
     print("the winner is...", game_winner)

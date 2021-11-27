@@ -369,20 +369,12 @@ class Board:
         :return: Dictionary, key is tuple of position of a piece, value is a list of tuples as positions to where
         they key can move to.
         """
-        white = []
-        black = []
+        consider = []
         possible_moves = collections.defaultdict(list)
         for i in self._board:
             for piece in i:
-                if isinstance(piece, Piece):
-                    if self._is_white(piece):
-                        white.append(piece)
-                    else:
-                        black.append(piece)
-        if self.get_current_turn() == 1:
-            consider = white
-        else:
-            consider = black
+                if isinstance(piece, Piece) and piece.get_color() == self.get_current_turn():
+                    consider.append(piece)
         for piece in consider:
             possible = piece.legal_moves()
             pos1x, pos1y = piece.get_position()
