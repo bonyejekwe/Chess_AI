@@ -24,11 +24,11 @@ def run_game(num=2):
     if num == 1:  # player against ai
         side = int(input("Select side you would like to play on (1 for white, -1 for black): "))
         ai_team = -1 * side
-        ai = AI(ai_team, "random")
+        ai = AI(ai_team, "medium")
         ai2 = False
     else:
         ai = AI(-1, "random")
-        ai2 = AI(1, "random")
+        ai2 = AI(1, "medium")
     game.start_game()
     game_winner = turn(game, ai, ai2)  # run the game
     print("the winner is...", game_winner)
@@ -37,7 +37,7 @@ def run_game(num=2):
 
 def turn(game, ai_game, ai_game2=False):  # effectively defaults to no AI for game
     i = 0
-    print(game.__repr__())
+    # print(game.__repr__())
     win = 0
     while game.is_game_over() is False and i < 200:
         # TODO change the game_over variable in board class once checkmate occurs
@@ -46,8 +46,8 @@ def turn(game, ai_game, ai_game2=False):  # effectively defaults to no AI for ga
         # turn(game, ai_game, ai_game2)
         i += 1
         print(i)
-        print(f'captured: {[str(p) for p in game.get_captured()]}')
-        print(game.__repr__())
+        # print(f'captured: {[str(p) for p in game.get_captured()]}')
+        # print(game.__repr__())
     if game.is_game_over():
         return game.winner()
     else:

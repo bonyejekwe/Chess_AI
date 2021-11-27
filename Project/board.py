@@ -102,7 +102,7 @@ class Board:
                 piece1.move(pos2x, pos2y)
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
             else:  # Pawn promotion implementation
-                print("here")
+                # print("here")
                 piece1.move(pos2x, pos2y)
                 piece1 = Queen(pos2x, pos2y, piece1.get_color())
                 self._board[pos1y][pos1x], self._board[pos2y][pos2x] = None, piece1

@@ -33,6 +33,10 @@ class Evaluation:
         self.moves = moves
 
     # example medium functions:
+    @staticmethod
+    def minimax():
+        # ai.minimax(board, depth, )
+        pass
     # .....
 
     # AI mode function calls
@@ -47,13 +51,18 @@ class Evaluation:
         self.king_restrict()
         return 0
 
-    def func_call(self, func_name):
-        funcs = {'random': self.random, 'basic': self.basic}  # add medium, hard, etc.
-        func = funcs[func_name]
-        func()
+    def medium(self):  # use *args
+        """Evaluate using medium mode (ie. minimax)"""
+        self.minimax()
+        return 0
 
-    def evaluated(self, func_name):
+    def func_call(self, func_name, *args):
+        funcs = {'random': self.random, 'basic': self.basic, 'medium': self.medium}  # add medium, hard, etc.
+        func = funcs[func_name]
+        func(*args)
+
+    def evaluated(self, func_name, *args):
         """Return the list (or dict) of moves mapped to corresponding weights after evaluation"""
-        self.func_call(func_name)
+        self.func_call(func_name, *args)
         return self.moves
 
