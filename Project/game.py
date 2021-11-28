@@ -6,6 +6,10 @@
 #  draw. The endgame is a major problem (ie. when there's just two kings randomly moving, etc.), so implementing like
 #  the 3fold repetition or something like the 50-move w/o capture rule would help
 
+
+# NOTE: can be changed, but game code: 1= white checkmate win, -1=black checkmate win, 2=white stalemated
+# (black can't move), -2=black stalemated (white can't move), 0=draw?, -5= timeout (over 200 moves)
+
 from board import Board
 from AI import AI
 
@@ -38,7 +42,7 @@ def run_game(num=2):
 def turn(game, ai_game, ai_game2=False):  # effectively defaults to no AI for game
     i = 0
     # print(game.__repr__())
-    win = 0
+    timed_out = -5
     while game.is_game_over() is False and i < 200:
         # TODO change the game_over variable in board class once checkmate occurs
         move(game, ai_game, ai_game2)
@@ -52,9 +56,8 @@ def turn(game, ai_game, ai_game2=False):  # effectively defaults to no AI for ga
     if game.is_game_over():
         return game.winner()
     else:
-        return win
-    # if end state is met (checkmate, forfeit)
-    #   sys.exit(0)
+        print('timed out')
+        return timed_out
 
 
 def move(game: Board, game_ai: AI, game_ai2=False):

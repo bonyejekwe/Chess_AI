@@ -29,7 +29,7 @@ class Piece:
         self._ypos = ypos
         self._color = color
         self._worth = 1
-        self._was_moved = False
+        self._was_moved = 1
 
     def get_color(self):
         return self._color  # if self._color == 1: # return "white" # else: # return "black"
@@ -41,7 +41,7 @@ class Piece:
         return self._worth
 
     def get_was_moved(self):
-        return self._was_moved
+        return self._was_moved < 0
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
@@ -52,7 +52,7 @@ class Piece:
         if (0 <= new_xpos <= 7) and (0 <= new_ypos <= 7):
             self._xpos = new_xpos
             self._ypos = new_ypos
-            self._was_moved = True
+            self._was_moved -= 1
         else:
             raise InvalidBoardPlacementError(new_xpos, new_ypos)
 
@@ -65,6 +65,12 @@ class Piece:
     def can_move_to(self, new_xpos, new_ypos):
         """Return true if piece can move to (new_xpos, new_ypos), false otherwise"""
         return (new_xpos, new_ypos) in self.legal_moves()
+
+    def revert(self, new_xpos, new_ypos):
+        self._xpos = new_xpos
+        self._ypos = new_ypos
+        self._was_moved += 1
+
 
 
 class Pawn(Piece):

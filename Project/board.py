@@ -47,7 +47,7 @@ class Board:
         black_back_row = [Rook(0, 7, -1), Knight(1, 7, -1), Bishop(2, 7, -1), Queen(3, 7, -1), King(4, 7, -1),
                           Bishop(5, 7, -1), Knight(6, 7, -1), Rook(7, 7, -1)]
         black_pawns = [Pawn(i, 6, -1) for i in range(8)]
-        empty = [[None for i in range(8)] for i in range(4)]
+        empty = [[None for _ in range(8)] for _ in range(4)]
         self._board.append(white_back_row)
         self._board.append(white_pawns)
         for row in empty:
@@ -55,19 +55,6 @@ class Board:
         self._board.append(black_pawns)
         self._board.append(black_back_row)
         self._turn = 1  # sets the turn to white
-
-    def start_test_game(self):
-        """
-        Starts a game for testing piece movement and game logic
-        """
-        b = [[None for i in range(8)] for i in range(8)]
-        b[0][4] = King(4, 0, 1)
-        b[7][4] = King(4, 7, -1)
-        # b[0][0] = Rook(0, 0, 1)
-        b[6][4] = Rook(4, 6, -1)
-        b[1][4] = Rook(4, 1, 1)
-        self._board = b
-        self._turn = 1
 
     def move_piece(self, position1: tuple, position2: tuple) -> Union[Piece, None]:
         """
@@ -148,14 +135,13 @@ class Board:
 
             # Case where the piece moved diagonally
             else:
-
                 # Determines the step for the range function to come up with values for diagonal
                 if pos2x > pos1x:
                     step = 1
                 else:
                     step = -1
                 # Makes the list of the x values along the diagonal
-                lst_x = list(range(pos1x+step, pos2x, step))  # adds step so we don't consider where the piece currently is
+                lst_x = list(range(pos1x+step, pos2x, step))  # adds step so we don't consider current piece position
 
                 # Determines the step for the range function to come up with values for diagonal
                 if pos2y > pos1y:
@@ -163,7 +149,7 @@ class Board:
                 else:
                     step = -1
                 # Makes the list of the y values along the diagonal
-                lst_y = list(range(pos1y+step, pos2y, step))  # adds step so we don't consider where the piece currently is
+                lst_y = list(range(pos1y+step, pos2y, step))  # adds step so we don't consider current piece position
                 for x, y in zip(lst_x, lst_y):
                     in_the_way.append(self._board[y][x])
         # print(in_the_way)
@@ -216,7 +202,7 @@ class Board:
         except IndexError:
             raise IndexError("The desired position is out of bounds of the board")
 
-        if not (isinstance(piece, Piece) or piece is None):  # makes sure the position actually holds a piece or is empty
+        if not (isinstance(piece, Piece) or piece is None):  # makes sure position actually holds a piece or is empty
             raise ValueError("Piece should not be of type {t} and value {v}".format(t=type(piece),
                                                                                     v=piece))
         return piece
@@ -295,58 +281,25 @@ class Board:
         return string
 
     def is_in_check(self, c):
-        # (color) is in check
-        for y in range(0, 8):
-            for x in self._board[y]:
-                if type(x) == King and x.get_color() == c:
-                    pos_x = self._board[y].index(x)
-                    pos_y = y
-        possible_piece = []
+        for i in range(0, 8):
+            for j in range(0, 8):
+                if isinstance(self._board[i][j], King) and self._board[i][j].get_color() == c:
+                    pos = self._board[i][j].get_position()
 
         try:
-            pos_x
+            pos[0]
         except NameError:
             raise Board.NoKing(f'{c} has no king.')
 
-        for i in range(0, 16):
-            # up and down
-            possible_piece.append((pos_x, i - pos_y))
-            # left and right
-            possible_piece.append((i - pos_x, pos_y))
-            # down and right
-            possible_piece.append((pos_x + i, pos_y + i))
-            # down and left
-            possible_piece.append((pos_x - i, pos_y + i))
-            # up and left
-            possible_piece.append((pos_x - i, pos_y - i))
-            # up and right
-            possible_piece.append((pos_x + i, pos_y - i))
-        # 8 knight squares
-        possible_piece.append((pos_x + 2, pos_y - 1))
-        possible_piece.append((pos_x + 2, pos_y + 1))
-        possible_piece.append((pos_x - 2, pos_y - 1))
-        possible_piece.append((pos_x - 2, pos_y + 1))
-        possible_piece.append((pos_x + 1, pos_y - 2))
-        possible_piece.append((pos_x + 1, pos_y + 2))
-        possible_piece.append((pos_x - 1, pos_y - 2))
-        possible_piece.append((pos_x - 1, pos_y + 2))
-        # remove duplicates
-        possible_piece = list(set(possible_piece))
-        new_pos = []
-        for x in possible_piece:
-            if 7 >= x[0] >= 0 and 7 >= x[1] >= 0:
-                new_pos.append(x)
-
-        try:
-            new_pos.remove((pos_x, pos_y))
-        except ValueError:
-            pass
         checks = []
-        for x in new_pos:
-            y = self.get_piece_from_position(x)
-            if y is not None:
-                if (y.get_color() != c) and ((pos_x, pos_y) in y.legal_moves()) and (type(y) == Knight or not self.is_piece_in_the_way(x, (pos_x, pos_y))):
-                    checks.append(y)
+        for i in range(0, 8):
+            for j in range(0, 8):
+                if isinstance(self._board[i][j], Piece) and self._board[i][j].get_color() != c:
+                    piece2 = self._board[i][j]
+                    if piece2.can_move_to(pos[0], pos[1]) and (
+                            type(piece2) == Knight or (not self.is_piece_in_the_way(piece2.get_position(), pos))):
+                        checks.append(self._board[i][j].get_position())
+
         if len(checks) != 0:
             return True
         else:
@@ -375,33 +328,39 @@ class Board:
             for piece in i:
                 if isinstance(piece, Piece) and piece.get_color() == self.get_current_turn():
                     consider.append(piece)
-        for piece in consider:
-            possible = piece.legal_moves()
-            pos1x, pos1y = piece.get_position()
+
+        for piece1 in consider:
+            possible = piece1.legal_moves()
+            pos1x, pos1y = piece1.get_position()
+            piece1_position = piece1.get_position()
             for e in possible:
-                if not self.is_piece_in_the_way(piece.get_position(), e):
-                    #  print("Before")
-                    #  print(self.__repr__())
-                    piece2 = self._board[e[1]][e[0]]
-                    if isinstance(piece2, Piece) and self.validate_turn_color(piece2):
+                if not self.is_piece_in_the_way(piece1.get_position(), e):
+                    piece2 = self._board[e[1]][e[0]]  # either None or Piece
+                    if isinstance(piece2, Piece) and self.validate_turn_color(piece2):  # don't capture same team
                         continue
+
+                    piece1.move(e[0], e[1])  # temporarily make the move
                     self._board[pos1y][pos1x], self._board[e[1]][e[0]] = None, self._board[pos1y][pos1x]
                     if not self.is_in_check(self.get_current_turn()):
-                        possible_moves[piece.get_position()].append(e)
-                    #  print("During")
-                    #  print(self.__repr__())
+                        possible_moves[piece1_position].append(e)
+
+                    piece1.revert(pos1x, pos1y)  # unmake the temporary move
                     self._board[pos1y][pos1x], self._board[e[1]][e[0]] = self._board[e[1]][e[0]], piece2
-                    #  print("After")
-                    #  print(self.__repr__())
+
         return possible_moves
 
     def is_game_over(self):
-        if len(self.legal_moves()) == 0 and self.is_in_check(self._turn):
-            print(f'checkmate')
+        if len(self.legal_moves()) == 0:
+            print(f'game over')
             self._game_over = True
-        elif len(self.legal_moves()) == 0:
-            print(f'stalemate')
         return self._game_over
 
     def winner(self):
-        return self.get_current_turn()
+        if len(self.legal_moves()) == 0 and self.is_in_check(self._turn):
+            print(f'checkmate')
+            return self.get_current_turn()
+        elif len(self.legal_moves()) == 0:
+            print(f'stalemate')
+            return 2 * self.get_current_turn()
+        else:
+            return 0
