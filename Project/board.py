@@ -36,6 +36,7 @@ class Board:
         self._turn = 1  # sets the turn to white
         self._captured = list()
         self._game_over = False  # change when checkmate happens
+        self._moves_since_capture = 0
 
     def start_game(self):
         """
@@ -55,17 +56,21 @@ class Board:
         self._board.append(black_pawns)
         self._board.append(black_back_row)
         self._turn = 1  # sets the turn to white
+        self._moves_since_capture = 0
+        self._game_over = False
 
-    def start_test_game(self):
+    def _start_test_game(self):
         """
         Starts a game for testing piece movement and game logic
         """
         b = [[None for i in range(8)] for i in range(8)]
-        b[0][4] = King(4, 0, 1)
-        b[7][4] = King(4, 7, -1)
-        # b[0][0] = Rook(0, 0, 1)
-        b[6][4] = Rook(4, 6, -1)
-        b[1][4] = Rook(4, 1, 1)
+        b[0][0] = King(0, 0, 1)
+        b[7][7] = King(7, 7, -1)
+
+        #b[6][6] = Queen(6,6,1)
+        #b[5][3] = Pawn(3,5,1)
+        #b[5][4] = Pawn(4,5,1)
+
         self._board = b
         self._turn = 1
 
@@ -98,7 +103,7 @@ class Board:
         piece2 = self.get_piece_from_position(pos2)
 
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
-            if not (isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0)):  # regular move
+            if not (isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0)):  # regular move, makes sure a pawn doesn't have to be promoted
                 piece1.move(pos2x, pos2y)
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
             else:  # Pawn promotion implementation
@@ -106,15 +111,21 @@ class Board:
                 piece1.move(pos2x, pos2y)
                 piece1 = Queen(pos2x, pos2y, piece1.get_color())
                 self._board[pos1y][pos1x], self._board[pos2y][pos2x] = None, piece1
+            self._moves_since_capture += 1  # for checking endgame
 
         else:  # if the place is not empty
             if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team it moves it and takes the other piece
+                if isinstance(piece1, Pawn):
+                    #print("Pawn capturing")
+                    piece1.set_capturing(True)
                 piece1.move(pos2x, pos2y)  # moves the individual piece object
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
                 self._captured.append(piece2)  # adds the captured piece to an array of captured pieces
                 if isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0):  # Pawn promotion after capture
                     self._board[pos2y][pos2x] = Queen(pos2x, pos2y, piece1.get_color())
+                self._moves_since_capture = 0  # for checking endgame
                 return piece2  # returns the piece captured
+
             else:  # catches the error when you try and capture a piece of the same team
                 raise Board.WrongTeamError("Trying to capture piece at {pos} but it is the same team of {team}".format(
                     pos=position2, team=self._turn))
@@ -345,7 +356,8 @@ class Board:
         for x in new_pos:
             y = self.get_piece_from_position(x)
             if y is not None:
-                if (y.get_color() != c) and ((pos_x, pos_y) in y.legal_moves()) and (type(y) == Knight or not self.is_piece_in_the_way(x, (pos_x, pos_y))):
+                if (y.get_color() != c) and ((pos_x, pos_y) in y.legal_moves()) and \
+                        (type(y) == Knight or not self.is_piece_in_the_way(x, (pos_x, pos_y))):
                     checks.append(y)
         if len(checks) != 0:
             return True
@@ -370,27 +382,27 @@ class Board:
         they key can move to.
         """
         consider = []
-        possible_moves = collections.defaultdict(list)
-        for i in self._board:
+        possible_moves = collections.defaultdict(list)  # makes a dictionary, where values are empty lists
+        for i in self._board:  # Gets all the piece of the current teams color
             for piece in i:
                 if isinstance(piece, Piece) and piece.get_color() == self.get_current_turn():
                     consider.append(piece)
-        for piece in consider:
-            possible = piece.legal_moves()
+        for piece in consider:  # considers all possible pieces of the team
+            possible = piece.legal_moves()  # gets all the positions a piece can move to, constrained by piece, not board
             pos1x, pos1y = piece.get_position()
-            for e in possible:
-                if not self.is_piece_in_the_way(piece.get_position(), e):
+            for e in possible:  # for each possible position a piece can move to, constrained by piece, not board
+                if not self.is_piece_in_the_way(piece.get_position(), e):  # if there is a piece in the way i.e. capturing
                     #  print("Before")
                     #  print(self.__repr__())
-                    piece2 = self._board[e[1]][e[0]]
-                    if isinstance(piece2, Piece) and self.validate_turn_color(piece2):
+                    piece2 = self._board[e[1]][e[0]]  # gets the piece trying to capture
+                    if isinstance(piece2, Piece) and self.validate_turn_color(piece2):  # if it is capturing the same team's piece, it just restarts the loop
                         continue
-                    self._board[pos1y][pos1x], self._board[e[1]][e[0]] = None, self._board[pos1y][pos1x]
-                    if not self.is_in_check(self.get_current_turn()):
-                        possible_moves[piece.get_position()].append(e)
+                    self._board[pos1y][pos1x], self._board[e[1]][e[0]] = None, self._board[pos1y][pos1x]  # moves the pieces on the board
+                    if not self.is_in_check(self.get_current_turn()):  # checks the move did not put the king in check
+                        possible_moves[piece.get_position()].append(e)  # adds the move to the list of legal moves
                     #  print("During")
                     #  print(self.__repr__())
-                    self._board[pos1y][pos1x], self._board[e[1]][e[0]] = self._board[e[1]][e[0]], piece2
+                    self._board[pos1y][pos1x], self._board[e[1]][e[0]] = self._board[e[1]][e[0]], piece2  # resets the board to check other pieces
                     #  print("After")
                     #  print(self.__repr__())
         return possible_moves
@@ -401,6 +413,10 @@ class Board:
             self._game_over = True
         elif len(self.legal_moves()) == 0:
             print(f'stalemate')
+            self._game_over = True
+        elif self._moves_since_capture > 49:
+            self._game_over = True
+            print(f'draw')
         return self._game_over
 
     def winner(self):
