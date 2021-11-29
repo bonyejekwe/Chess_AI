@@ -57,7 +57,7 @@ class AI:
         white = sum([10 * (board.get_piece_from_position(m).get_position()[1] -
                     board.get_piece_from_position(m).original_position()[1]) for m in all_positions if
                      isinstance(board.get_piece_from_position(m), Pawn) and board.get_piece_from_position(m).get_color() == 1])
-        black = sum([10 * (board.get_piece_from_position(m).get_position()[1] -
+        black = sum([-10 * (board.get_piece_from_position(m).get_position()[1] -
                     board.get_piece_from_position(m).original_position()[1]) for m in all_positions if
                      isinstance(board.get_piece_from_position(m), Pawn) and board.get_piece_from_position(m).get_color() == -1])
         score += (white - black) * color
@@ -66,7 +66,7 @@ class AI:
         white = sum([80 - (10 * (board.get_piece_from_position(m).get_position()[1] -
                     board.get_piece_from_position(m).original_position()[1])) for m in all_positions if
                      isinstance(board.get_piece_from_position(m), King) and board.get_piece_from_position(m).get_color() == 1])
-        black = sum([80 - (10 * (board.get_piece_from_position(m).get_position()[1] -
+        black = sum([80 + (10 * (board.get_piece_from_position(m).get_position()[1] -
                     board.get_piece_from_position(m).original_position()[1])) for m in all_positions if
                      isinstance(board.get_piece_from_position(m), King) and board.get_piece_from_position(m).get_color() == -1])
         score += (white - black) * color
