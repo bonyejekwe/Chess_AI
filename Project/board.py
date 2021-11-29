@@ -21,6 +21,9 @@ class Board:
     class NoKing(Exception):
         pass
 
+    class InvalidPawnMove(Exception):
+        pass
+
     def __init__(self):
         """
         board is 2d array of pieces and None objects. White is at the top, black is at the bottom so we can index the
@@ -62,15 +65,23 @@ class Board:
         Starts a game for testing piece movement and game logic
         """
         b = [[None for i in range(8)] for i in range(8)]
-        b[0][0] = King(0, 0, 1)
-        b[7][4] = King(4, 7, -1)
 
-        #b[6][6] = Queen(6,6,1)
-        b[1][3] = Pawn(3,1,1)
-        b[2][4] = Pawn(4,2,-1)
-        b[3][5] = Pawn(5,3,-1)
-        b[2][3] = Rook(3,2,-1)
-        b[6][3] = Pawn(3,6,1)
+        white_back_row = [Rook(0, 0, 1), Knight(1, 0, 1), Bishop(2, 0, 1), Queen(3, 0, 1), King(4, 0, 1),
+                          Bishop(5, 0, 1), Knight(6, 0, 1), Rook(7, 0, 1)]
+        black_back_row = [Rook(0, 7, -1), Knight(1, 7, -1), Bishop(2, 7, -1), Queen(3, 7, -1), King(4, 7, -1),
+                          Bishop(5, 7, -1), Knight(6, 7, -1), Rook(7, 7, -1)]
+        b[0] = white_back_row
+        b[7] = black_back_row
+
+        # b[0][0] = King(0, 0, 1)
+        # b[7][4] = King(4, 7, -1)
+        #
+        # #b[6][6] = Queen(6,6,1)
+        # b[1][3] = Pawn(3,1,1)
+        # b[2][4] = Pawn(4,2,-1)
+        # b[3][5] = Pawn(5,3,-1)
+        # #b[3][3] = Rook(3,3,-1)
+        # b[7][5] = Pawn(5,7,1)
         #b[5][4] = Pawn(4,5,1)
 
         self._board = b
@@ -105,8 +116,9 @@ class Board:
         piece2 = self.get_piece_from_position(pos2)
 
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
-            if isinstance(piece1, Pawn):  # sets pawn piece capture to false
-                piece1.set_capturing(False)
+            if isinstance(piece1, Pawn) and pos2x != pos1x:  # sets pawn piece capture to false
+                raise Board.InvalidPawnMove("Trying to move the pawn from {pos1} to {pos2}, which is diagonal but the"
+                                            "pawn is not capturing".format(pos1 = position1, pos2 = position2))
             if not (isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0)):  # regular move, makes sure a pawn doesn't have to be promoted
                 piece1.move(pos2x, pos2y)
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
@@ -120,9 +132,9 @@ class Board:
         else:  # if the place is not empty
             # if the piece it is trying to move to is the other team it moves it and takes the other piece
             if not self.validate_turn_color(piece2):
-                if isinstance(piece1, Pawn):
-                    # print("Pawn capturing")
-                    piece1.set_capturing(True)
+                if isinstance(piece1, Pawn) and abs(pos2x - pos1x) != 1:
+                    raise Board.InvalidPawnMove("Trying to move the pawn from {pos1} to {pos2} to capture, but did"
+                                                "not move diagonal".format(pos1 = position1, pos2 = position2))
                 piece1.move(pos2x, pos2y)  # moves the individual piece object
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
                 self._captured.append(piece2)  # adds the captured piece to an array of captured pieces
@@ -322,7 +334,12 @@ class Board:
         checks = []
         for i in range(0, 8):
             for j in range(0, 8):
-                if isinstance(self._board[i][j], Piece) and self._board[i][j].get_color() != c:
+                if isinstance(self._board[i][j], Pawn) and self._board[i][j].get_color() != c:
+                    piece2 = self._board[i][j]
+                    pos2 = piece2.get_position()
+                    if (pos2[0]+1 == pos[0] or pos2[0]-1 == pos[0]) and pos2[1]+piece2.get_color() == pos[1]:  # checks if the king is diagonal to the pawn
+                        checks.append(pos2)
+                elif isinstance(self._board[i][j], Piece) and self._board[i][j].get_color() != c:
                     piece2 = self._board[i][j]
                     if piece2.can_move_to(pos[0], pos[1]) and (
                             type(piece2) == Knight or (not self.is_piece_in_the_way(piece2.get_position(), pos))):
@@ -359,14 +376,17 @@ class Board:
 
         for piece1 in consider:
             possible = piece1.legal_moves()
-            pos1x, pos1y = piece1.get_position()
             piece1_position = piece1.get_position()
+            pos1x, pos1y = piece1_position
+
             for e in possible:
-                if not self.is_piece_in_the_way(piece1.get_position(), e):
+                if not self.is_piece_in_the_way(piece1_position, e):
                     piece2 = self._board[e[1]][e[0]]  # either None or Piece
                     if isinstance(piece2, Piece) and self.validate_turn_color(piece2):  # don't capture same team
                         continue
-
+                    if (isinstance(piece1, Pawn) and ((isinstance(piece2, Piece) and (e[0]-pos1x == 0))
+                                                      or (not isinstance(piece2, Piece) and abs(e[0]-pos1x)==1))):
+                        continue
                     piece1.move(e[0], e[1])  # temporarily make the move
                     self._board[pos1y][pos1x], self._board[e[1]][e[0]] = None, self._board[pos1y][pos1x]
                     if not self.is_in_check(self.get_current_turn()):
