@@ -41,7 +41,13 @@ class Piece:
         return self._worth
 
     def get_was_moved(self):
-        return self._was_moved < 0
+        if self._ypos == self.get_color():  # checks if the white pawn has moved from its starting position
+            return False
+        if self._ypos == -6 * self.get_color(): # checks if the black pawn has moved from its starting position
+            # since black color is -1, and its starting y position if 6, if you multiple -1 by -6 it will = start y pos
+            return False
+        return True
+        #return self._was_moved < 0
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
@@ -96,8 +102,10 @@ class Pawn(Piece):
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
         Here: true if piece criteria and fulfills pawn movement criteria"""
-        return (super().criteria(x, y) and ((y - self._ypos == self._color) or Pawn.first_move(self, y)) and
-                (((abs(x - self._xpos) == 1) and self.is_capturing()) or (x == self._xpos and not self.is_capturing())))
+        # return (super().criteria(x, y) and ((y - self._ypos == self._color) or Pawn.first_move(self, y)) and
+        #         (((abs(x - self._xpos) == 1) and self.is_capturing()) or (x == self._xpos and not self.is_capturing())))
+        return (super().criteria(x, y) and (((y - self._ypos == self._color) and abs(x - self._xpos) <= 1) or
+                                            (Pawn.first_move(self, y) and (x-self._xpos == 0))))
 
     def move(self, new_xpos, new_ypos):
         if self.criteria(new_xpos, new_ypos):
