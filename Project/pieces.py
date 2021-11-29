@@ -97,7 +97,7 @@ class Pawn(Piece):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
         Here: true if piece criteria and fulfills pawn movement criteria"""
         return (super().criteria(x, y) and ((y - self._ypos == self._color) or Pawn.first_move(self, y)) and
-                (((abs(x - self._xpos) <= 1) and self.is_capturing()) or x == self._xpos))
+                (((abs(x - self._xpos) == 1) and self.is_capturing()) or (x == self._xpos and not self.is_capturing())))
 
     def move(self, new_xpos, new_ypos):
         if self.criteria(new_xpos, new_ypos):
