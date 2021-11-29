@@ -16,6 +16,7 @@
 
 import random
 from evaluate import Evaluation  # how to evaluate moves (to be implemented)
+from pieces import *
 import functools
 import copy
 
@@ -39,10 +40,28 @@ class AI:
         white = 0
         black = 0
         for i in range(8):  # for each row
-            white += sum([piece.worth() for piece in board[i] if piece is not None and piece.get_color == 1])
-            black += sum([piece.worth() for piece in board[i] if piece is not None and piece.get_color == -1])
-        return (white - black) * color
-    # TODO Update the worth of each piece as the game progresses, possibly move to board class
+            white += sum([100 * piece.worth() for piece in board[i] if piece is not None and piece.get_color == 1])
+            black += sum([100 * piece.worth() for piece in board[i] if piece is not None and piece.get_color == -1])
+        score = (white - black) * color
+        # TODO Update the worth of each piece as the game progresses, possibly move to board class
+
+        # pawn development: increase score if pawns are moving up the board
+        for i in range(8):  # for each row
+            white += sum([10 * (piece.get_position()[1] - piece.original_position()[1]) for piece in board[i] if
+                          isinstance(piece, Pawn) and piece.get_color == 1])
+            black += sum([-10 * (piece.get_position()[1] - piece.original_position()[1]) for piece in board[i] if
+                          isinstance(piece, Pawn) and piece.get_color == -1])
+        score += (white - black) * color
+
+        # king development: increase score if king is not moving up the board
+        for i in range(8):  # for each row
+            white += sum([80 - (10 * (piece.get_position()[1] - piece.original_position()[1])) for piece in board[i] if
+                          isinstance(piece, King) and piece.get_color == 1])
+            black += sum([80 - (-10 * (piece.get_position()[1] - piece.original_position()[1])) for piece in board[i] if
+                          isinstance(piece, King) and piece.get_color == -1])
+        score += (white - black) * color
+        print(score)
+        return score
 
     def get_team(self):
         return self._team
@@ -102,6 +121,7 @@ class AI:
             if (curr_eval - m_eval) * min_or_max > 0:
                 m_eval = curr_eval
                 best_move = move
+        # print(best_move, m_eval)
         return best_move, m_eval
 
     def make_move(self, board):

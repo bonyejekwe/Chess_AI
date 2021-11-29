@@ -43,7 +43,7 @@ def turn(game, ai_game, ai_game2=False):  # effectively defaults to no AI for ga
     i = 0
     # print(game.__repr__())
     timed_out = -5
-    while game.is_game_over() is False and i < 250:
+    while game.is_game_over() is False and i < 200:
         # TODO change the game_over variable in board class once checkmate occurs
         move(game, ai_game, ai_game2)
         game.switch_turn()

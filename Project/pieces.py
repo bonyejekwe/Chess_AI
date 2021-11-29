@@ -25,6 +25,8 @@ class InvalidBoardPlacementError(Exception):
 class Piece:
 
     def __init__(self, xpos, ypos, color: int):
+        self._original_xpos = xpos
+        self._original_ypos = ypos
         self._xpos = xpos
         self._ypos = ypos
         self._color = color
@@ -33,6 +35,9 @@ class Piece:
 
     def get_color(self):
         return self._color  # if self._color == 1: # return "white" # else: # return "black"
+
+    def original_position(self):
+        return self._original_xpos, self._original_ypos
 
     def get_position(self):
         return self._xpos, self._ypos
@@ -222,7 +227,7 @@ class King(Piece):
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
-        self._worth = 0
+        self._worth = 90
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
