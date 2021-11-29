@@ -57,6 +57,25 @@ class Board:
         self._moves_since_capture = 0
         self._game_over = False
 
+    def _start_test_game(self):
+        """
+        Starts a game for testing piece movement and game logic
+        """
+        b = [[None for i in range(8)] for i in range(8)]
+        b[0][0] = King(0, 0, 1)
+        b[7][4] = King(4, 7, -1)
+
+        #b[6][6] = Queen(6,6,1)
+        b[1][3] = Pawn(3,1,1)
+        b[2][4] = Pawn(4,2,-1)
+        b[3][5] = Pawn(5,3,-1)
+        b[2][3] = Rook(3,2,-1)
+        b[6][3] = Pawn(3,6,1)
+        #b[5][4] = Pawn(4,5,1)
+
+        self._board = b
+        self._turn = 1
+
     def move_piece(self, position1: tuple, position2: tuple) -> Union[Piece, None]:
         """
         Moves a piece from one position to another
@@ -86,8 +105,8 @@ class Board:
         piece2 = self.get_piece_from_position(pos2)
 
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
-            # if isinstance(piece1, Pawn):  # sets pawn piece capture to false
-                # piece1.set_capturing(False)
+            if isinstance(piece1, Pawn):  # sets pawn piece capture to false
+                piece1.set_capturing(False)
             if not (isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0)):  # regular move, makes sure a pawn doesn't have to be promoted
                 piece1.move(pos2x, pos2y)
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
