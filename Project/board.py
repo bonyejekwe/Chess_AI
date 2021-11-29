@@ -122,11 +122,13 @@ class Board:
             if not (isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0)):  # regular move, makes sure a pawn doesn't have to be promoted
                 piece1.move(pos2x, pos2y)
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
+                self._move_count += 1
             else:  # Pawn promotion implementation
                 # print("here")
                 piece1.move(pos2x, pos2y)
                 piece1 = Queen(pos2x, pos2y, piece1.get_color())
                 self._board[pos1y][pos1x], self._board[pos2y][pos2x] = None, piece1
+                self._move_count += 1
             self._moves_since_capture += 1  # for checking endgame
 
         else:  # if the place is not empty
@@ -137,6 +139,7 @@ class Board:
                                                 "not move diagonal".format(pos1 = position1, pos2 = position2))
                 piece1.move(pos2x, pos2y)  # moves the individual piece object
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
+                self._move_count += 1
                 self._captured.append(piece2)  # adds the captured piece to an array of captured pieces
                 if isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0):  # Pawn promotion after capture
                     self._board[pos2y][pos2x] = Queen(pos2x, pos2y, piece1.get_color())
@@ -305,6 +308,9 @@ class Board:
         """
         return self._turn
 
+    def get_current_move_count(self) -> int:
+        return self._move_count
+
     def __repr__(self):
         alphabet = ["A", "B", "C", "D", "E", "F", "G", "H"]
         string = " "
@@ -389,11 +395,13 @@ class Board:
                         continue
                     piece1.move(e[0], e[1])  # temporarily make the move
                     self._board[pos1y][pos1x], self._board[e[1]][e[0]] = None, self._board[pos1y][pos1x]
+                    self._move_count += 1
                     if not self.is_in_check(self.get_current_turn()):
                         possible_moves[piece1_position].append(e)
 
                     piece1.revert(pos1x, pos1y)  # unmake the temporary move
                     self._board[pos1y][pos1x], self._board[e[1]][e[0]] = self._board[e[1]][e[0]], piece2
+                    self._move_count -= 1
 
         return possible_moves
 

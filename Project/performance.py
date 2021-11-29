@@ -18,7 +18,6 @@ def simulation(n, m1="random", m2="random", no_draws=True):
     print(f"Game average time: {round(((f - s) / n), 2)} seconds.")
     return winners
 
-simulation(5, m1="medium")
-#l = simulation(12)
 
-
+# l = simulation(12)
+simulation(7, m1="medium", m2='basic')

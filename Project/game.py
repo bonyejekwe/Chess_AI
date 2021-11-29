@@ -1,14 +1,8 @@
 
 # TODO README!!!!
-#  Still need to implement checkmate in the game correctly. Currently the game does end at a point that very closely
-#  resembles checkmate but there is probably a bug somewhere. Also, a lot of the games end in "draws"
-#  (currently each game is capped to take less than 200 moves and any game taking longer is listed as a
-#  draw. The endgame is a major problem (ie. when there's just two kings randomly moving, etc.), so implementing like
-#  the 3fold repetition or something like the 50-move w/o capture rule would help
-
-
-# NOTE: can be changed, but game code: 1= white checkmate win, -1=black checkmate win, 2=white stalemated
-# (black can't move), -2=black stalemated (white can't move), 0=draw?, -5= timeout (over 200 moves)
+#  Currently each game is capped to take less than 200 moves and any game taking longer is listed as a timeout.
+#  NOTE: this can be changed, but game code for performance.py: 1= white checkmate win, -1=black checkmate win, 2=white
+#  stalemated (black can't move), -2=black stalemated (white can't move), 0=draw?, -5=timeout (over 200 moves)
 
 from board import Board
 from AI import AI
@@ -40,18 +34,12 @@ def run_game(num=2, mode1="random", mode2="random"):
 
 
 def turn(game, ai_game, ai_game2=False):  # effectively defaults to no AI for game
-    i = 0
-    # print(game.__repr__())
     timed_out = -5
-    while game.is_game_over() is False and i < 200:
-        # TODO change the game_over variable in board class once checkmate occurs
+    while game.is_game_over() is False and game.get_current_move_count() < 200:
         move(game, ai_game, ai_game2)
         game.switch_turn()
-        # turn(game, ai_game, ai_game2)
-        i += 1
-        print(f"Turn #: {i}...")
-        # print(f'captured: {[str(p) for p in game.get_captured()]}')
-        # print(game.__repr__())
+        print(f"Turn #: {game.get_current_move_count()}...")
+        # print(f"captured: {[str(p) for p in game.get_captured()]}")
     if game.is_game_over():
         return game.winner()
     else:

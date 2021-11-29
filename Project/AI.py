@@ -6,7 +6,6 @@
 #  -so far "basic" just favors capturing pieces of equal or lesser value, and favors not moving the king (need add more)
 #  -so far "medium" is just basic minimax implemented, can use weighting to impact scoring
 
-
 # TODO: The AI should retrieve all the information about its pieces to use (ie. every piece's position/color/worth/
 #  in_danger status/etc). We can take the list of legal moves and take a weighted random choice, weighted by in_danger
 #  status and other applicable factors
@@ -19,6 +18,13 @@ from evaluate import Evaluation  # how to evaluate moves (to be implemented)
 from pieces import *
 import functools
 import copy
+
+# all_positions: a SINGLE list (of len() = 64) of all board positions to filter piece legal moves
+all_positions = [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (0, 1), (1, 1), (2, 1), (3, 1), (4, 1),
+                 (5, 1), (6, 1), (7, 1), (0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (0, 3), (1, 3),
+                 (2, 3), (3, 3), (4, 3), (5, 3), (6, 3), (7, 3), (0, 4), (1, 4), (2, 4), (3, 4), (4, 4), (5, 4), (6, 4),
+                 (7, 4), (0, 5), (1, 5), (2, 5), (3, 5), (4, 5), (5, 5), (6, 5), (7, 5), (0, 6), (1, 6), (2, 6), (3, 6),
+                 (4, 6), (5, 6), (6, 6), (7, 6), (0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7), (7, 7)]
 
 
 class AI:
@@ -39,28 +45,40 @@ class AI:
          """
         white = 0
         black = 0
-        for i in range(8):  # for each row
-            white += sum([100 * piece.worth() for piece in board[i] if piece is not None and piece.get_color == 1])
-            black += sum([100 * piece.worth() for piece in board[i] if piece is not None and piece.get_color == -1])
+        white = sum([100 * board.get_piece_from_position(m).get_worth() for m in all_positions if
+                     isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(m).get_color() == 1])
+        black = sum([100 * board.get_piece_from_position(m).get_worth() for m in all_positions if
+                     isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(m).get_color() == -1])
+        # print(white, black, (white - black) * color)
         score = (white - black) * color
-        # TODO Update the worth of each piece as the game progresses, possibly move to board class
 
+        # TODO Update worth/use of each criteria wrt time (opening, endgame, etc.), possibly move to evaluation class
         # pawn development: increase score if pawns are moving up the board
-        for i in range(8):  # for each row
-            white += sum([10 * (piece.get_position()[1] - piece.original_position()[1]) for piece in board[i] if
-                          isinstance(piece, Pawn) and piece.get_color == 1])
-            black += sum([-10 * (piece.get_position()[1] - piece.original_position()[1]) for piece in board[i] if
-                          isinstance(piece, Pawn) and piece.get_color == -1])
+        white = sum([10 * (board.get_piece_from_position(m).get_position()[1] -
+                    board.get_piece_from_position(m).original_position()[1]) for m in all_positions if
+                     isinstance(board.get_piece_from_position(m), Pawn) and board.get_piece_from_position(m).get_color() == 1])
+        black = sum([10 * (board.get_piece_from_position(m).get_position()[1] -
+                    board.get_piece_from_position(m).original_position()[1]) for m in all_positions if
+                     isinstance(board.get_piece_from_position(m), Pawn) and board.get_piece_from_position(m).get_color() == -1])
         score += (white - black) * color
 
         # king development: increase score if king is not moving up the board
-        for i in range(8):  # for each row
-            white += sum([80 - (10 * (piece.get_position()[1] - piece.original_position()[1])) for piece in board[i] if
-                          isinstance(piece, King) and piece.get_color == 1])
-            black += sum([80 - (-10 * (piece.get_position()[1] - piece.original_position()[1])) for piece in board[i] if
-                          isinstance(piece, King) and piece.get_color == -1])
+        white = sum([80 - (10 * (board.get_piece_from_position(m).get_position()[1] -
+                    board.get_piece_from_position(m).original_position()[1])) for m in all_positions if
+                     isinstance(board.get_piece_from_position(m), King) and board.get_piece_from_position(m).get_color() == 1])
+        black = sum([80 - (10 * (board.get_piece_from_position(m).get_position()[1] -
+                    board.get_piece_from_position(m).original_position()[1])) for m in all_positions if
+                     isinstance(board.get_piece_from_position(m), King) and board.get_piece_from_position(m).get_color() == -1])
         score += (white - black) * color
-        print(score)
+
+        # general piece development: increase weight if pieces have many options to move
+        white = sum([len(board.get_piece_from_position(m).legal_moves()) for m in all_positions if
+                     isinstance(board.get_piece_from_position(m), Piece) and (not isinstance(board.get_piece_from_position(m), Pawn)) and
+                     board.get_piece_from_position(m).get_color() == 1])
+        black = sum([len(board.get_piece_from_position(m).legal_moves()) for m in all_positions if
+                     isinstance(board.get_piece_from_position(m), Piece) and (not isinstance(board.get_piece_from_position(m), Pawn)) and
+                     board.get_piece_from_position(m).get_color() == -1])
+        score += (white - black) * color
         return score
 
     def get_team(self):
@@ -103,7 +121,7 @@ class AI:
 
         # base case: when depth = 0
         if depth == 0 or b.is_game_over():
-            return None, self.scoring(board.get_board(), maximizing_color)
+            return None, self.scoring(board, maximizing_color)
 
         moves = self.format_legal_moves(board)
         best_move = random.choice(moves)
