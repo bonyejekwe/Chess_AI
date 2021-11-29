@@ -1,15 +1,26 @@
-Castling
-Legal Moves
-  -Dictionary Key:Piece Value:List of Positions it can go to (includes captures)
-GUI
-AI (waiting on legal moves)
-  -Figure out possible scoring methods
-  -Figure out how to implement different weight
-  -Figure out how to evolve those weights
-  -Implement alpha-beta pruning for minimax algorithm
--Game over states (checkmate, stalemate, 3fold repetition, 50 move rule, etc.)
+From Rachlin: "I think skipping en passant in favor of focusing on the AI is a very reasonable tradeoff.   Assuming that a pawn always converts to a queen would also be ok.    Heck even not dealing with castling would be acceptable to me...  AI AI AI"
 
-From Rachlin...
-"I think skipping en passant in favor of focusing on the AI is a very reasonable tradeoff.   Assuming that a pawn always converts to a queen would also be ok.    Heck even not dealing with castling would be acceptable to me. 
+AI
+-possibly change the implementation of updating the scoring evaluation
+-possibly hardcode common chess openings (and possibly engames)
+-implement alpha-beta pruning for the minimax algorithm
 
-AI AI AI"
+
+AI Scoring (Ideas):  
+-Any move putting the other team in checkmate should have a very very high evaluation.
+-Any move taking the opponent's queen should have a very high evaluation.
+-Any move putting the opponent in check should have a high / very high evaluation
+-Incorporate a score for each piece based on it's position on the board
+-Incorporate an "in-danger" state for each piece. Moves lowering the amount of pieces "in-danger" should have a high evaluation
+-Give weight to positions where pieces have a lot of available legal moves (needs to have diminishing returns), primarily bishop, knight
+-Decrease weight for pawn pushing
+-Decrease weight for king protection
+-Continue to favor capturing but only "safe" captures, or for captures of pieces of equal/lesser worth to capturing piece
+-Define function (inside_square) that takes a piece position as input and returns bool for whether piece is in the middle of the board
+
+
+Misc...
+-implement castling (time permitting)
+-implement en passant (time permitting)
+-implement 3 fold repetition (time permitting / if necessary)
+-incorporate the GUI
