@@ -78,10 +78,9 @@ class AI:
         :param maximizing_player: The team maximizing their score at the current depth
         :param maximizing_color: The team maximizing their score overall
         :return: A tuple with best move and best evaluation"""
-        print(f'entering minimax w/ depth {depth}, maximizing player {maximizing_player}, and \
-        maximizing color {maximizing_color}')
+        # print(f'enter minimax w/ depth {depth}, maxim player {maximizing_player}, and maxim color {maximizing_color}')
         b = board
-        print(board)
+        # print(board)
 
         # base case: when depth = 0
         if depth == 0 or b.is_game_over():
@@ -89,16 +88,15 @@ class AI:
 
         moves = self.format_legal_moves(board)
         best_move = random.choice(moves)
-        print("best move start:'", best_move)
-        print(moves)
+        # print(moves)
 
         min_or_max = maximizing_player * maximizing_color  # 1 if they are same (maximizing), -1 if they are different (minimizing)
         m_eval = -10000 * min_or_max  # large negative # if same (maximizing), large positive # if different (minimizing)
         for move in moves:
             b1 = copy.deepcopy(board)
-            print(move[0], move[1])
+            # print(move[0], move[1])
             start, end = self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])
-            print(start, end)
+            # print(start, end)
             b1.move_piece(start, end)
             curr_eval = self.minimax(b1, depth - 1, -1 * maximizing_player, maximizing_color)[1]
             if (curr_eval - m_eval) * min_or_max > 0:

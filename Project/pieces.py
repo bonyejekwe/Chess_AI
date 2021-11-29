@@ -72,7 +72,6 @@ class Piece:
         self._was_moved += 1
 
 
-
 class Pawn(Piece):
     """The movement according on color is based on: "white" = 1, "black" = -1 for simplicity"""
 
@@ -97,12 +96,8 @@ class Pawn(Piece):
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
         Here: true if piece criteria and fulfills pawn movement criteria"""
-        return (super().criteria(x, y)
-                and ((y - self._ypos == self._color) or Pawn.first_move(self, y))  # checks it only moves one place forward in the correct direction,or if it hasn't moved, two places forward in the correct direction
-                and (
-                        ((abs(x - self._xpos) == 1) and self.is_capturing())
-                        or (x == self._xpos and not self.is_capturing())
-                ))
+        return (super().criteria(x, y) and ((y - self._ypos == self._color) or Pawn.first_move(self, y)) and
+                (((abs(x - self._xpos) <= 1) and self.is_capturing()) or x == self._xpos))
 
     def move(self, new_xpos, new_ypos):
         if self.criteria(new_xpos, new_ypos):

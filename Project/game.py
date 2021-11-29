@@ -17,22 +17,22 @@ from AI import AI
 def main():
     winners = []
     for _ in range(7):
-        result = run_game(2)  # run AI vs AI (change argument to 1 for player vs AI)
+        result = run_game(2, mode1='random')  # run AI vs AI (change argument to 1 for player vs AI)
         winners.append(result)
     print("Winners", winners)
 
 
-def run_game(num=2):
+def run_game(num=2, mode1="random", mode2="random"):
     """Run game using num of AI's (1=player vs AI, 2=AI vs AI). Defaults to AI vs AI"""
     game = Board()
     if num == 1:  # player against ai
         side = int(input("Select side you would like to play on (1 for white, -1 for black): "))
         ai_team = -1 * side
-        ai = AI(ai_team, "medium")
+        ai = AI(ai_team, mode1)
         ai2 = False
     else:
-        ai = AI(-1, "random")
-        ai2 = AI(1, "random")
+        ai = AI(1, mode1)
+        ai2 = AI(-1, mode2)
     game.start_game()
     game_winner = turn(game, ai, ai2)  # run the game
     print("the winner is...", game_winner)
@@ -43,14 +43,13 @@ def turn(game, ai_game, ai_game2=False):  # effectively defaults to no AI for ga
     i = 0
     # print(game.__repr__())
     timed_out = -5
-    while game.is_game_over() is False and i < 200:
+    while game.is_game_over() is False and i < 250:
         # TODO change the game_over variable in board class once checkmate occurs
         move(game, ai_game, ai_game2)
         game.switch_turn()
         # turn(game, ai_game, ai_game2)
         i += 1
-        for _ in range(10):
-            print(f"Turn #: {i}...")
+        print(f"Turn #: {i}...")
         # print(f'captured: {[str(p) for p in game.get_captured()]}')
         # print(game.__repr__())
     if game.is_game_over():
