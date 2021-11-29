@@ -1,4 +1,3 @@
-
 # board.py: defines the board object
 
 from pieces import *
@@ -7,7 +6,6 @@ import collections
 
 
 class Board:
-
     class WrongTeamError(Exception):
         pass
 
@@ -95,14 +93,16 @@ class Board:
                 self._board[pos1y][pos1x], self._board[pos2y][pos2x] = None, piece1
 
         else:  # if the place is not empty
-            if not self.validate_turn_color(piece2):  # if the piece it is trying to move to is the other team it moves it and takes the other piece
+            # if the piece it is trying to move to is the other team it moves it and takes the other piece
+            if not self.validate_turn_color(piece2):
                 piece1.move(pos2x, pos2y)  # moves the individual piece object
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
                 self._captured.append(piece2)  # adds the captured piece to an array of captured pieces
                 if isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0):  # Pawn promotion after capture
                     self._board[pos2y][pos2x] = Queen(pos2x, pos2y, piece1.get_color())
                 return piece2  # returns the piece captured
-            else:  # catches the error when you try and capture a piece of the same team
+            # otherwise catches the error when you try and capture a piece of the same team
+            else:
                 raise Board.WrongTeamError("Trying to capture piece at {pos} but it is the same team of {team}".format(
                     pos=position2, team=self._turn))
         return None
@@ -141,7 +141,7 @@ class Board:
                 else:
                     step = -1
                 # Makes the list of the x values along the diagonal
-                lst_x = list(range(pos1x+step, pos2x, step))  # adds step so we don't consider current piece position
+                lst_x = list(range(pos1x + step, pos2x, step))  # adds step so we don't consider current piece position
 
                 # Determines the step for the range function to come up with values for diagonal
                 if pos2y > pos1y:
@@ -149,7 +149,7 @@ class Board:
                 else:
                     step = -1
                 # Makes the list of the y values along the diagonal
-                lst_y = list(range(pos1y+step, pos2y, step))  # adds step so we don't consider current piece position
+                lst_y = list(range(pos1y + step, pos2y, step))  # adds step so we don't consider current piece position
                 for x, y in zip(lst_x, lst_y):
                     in_the_way.append(self._board[y][x])
         # print(in_the_way)
@@ -167,7 +167,7 @@ class Board:
         step is set to -1 so the range function decreases. It adds step to the initial value as it is just position 1 
         which we know is occupied. It does the exact same thing but for the y direction. It then iterates through all
         the pieces along the diagonal and adds each individual one to the array in_the_way
-                
+
         """
 
     def is_piece_in_the_way(self, pos1: tuple, pos2: tuple) -> bool:
@@ -243,7 +243,7 @@ class Board:
         :param position: Position you would like convert
         :return: A tuple with two numbers as position
         """
-        return (ord(position[0]) - 65, position[1]-1)
+        return (ord(position[0]) - 65, position[1] - 1)
 
     def get_board(self) -> list:
         """
@@ -266,7 +266,6 @@ class Board:
 
     def __repr__(self):
         alphabet = ["A", "B", "C", "D", "E", "F", "G", "H"]
-        num = 1
         string = " "
         for letter in alphabet:
             string += "{:>8}".format(letter)

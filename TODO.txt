@@ -6,7 +6,8 @@ AI (waiting on legal moves)
   -Figure out possible scoring methods
   -Figure out how to implement different weight
   -Figure out how to evolve those weights
-
+  -Implement alpha-beta pruning for minimax algorithm
+-Game over states (checkmate, stalemate, 3fold repetition, 50 move rule, etc.)
 
 From Rachlin...
 "I think skipping en passant in favor of focusing on the AI is a very reasonable tradeoff.   Assuming that a pawn always converts to a queen would also be ok.    Heck even not dealing with castling would be acceptable to me. 
