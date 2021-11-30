@@ -38,6 +38,8 @@ class Board:
         self._captured = list()
         self._game_over = False  # change when checkmate happens
         self._moves_since_capture = 0
+        self._white_king_position = (4,0) # x, y indices of the white king
+        self._black_king_position = (4, 7) # x, y indices of the black king
 
     def start_game(self):
         """
@@ -58,6 +60,7 @@ class Board:
         self._board.append(black_back_row)
         self._turn = 1  # sets the turn to white
         self._moves_since_capture = 0
+        self._move_count = 0
         self._game_over = False
 
     def _start_test_game(self):
@@ -66,17 +69,11 @@ class Board:
         """
         b = [[None for i in range(8)] for i in range(8)]
 
-        white_back_row = [Rook(0, 0, 1), Knight(1, 0, 1), Bishop(2, 0, 1), Queen(3, 0, 1), King(4, 0, 1),
-                          Bishop(5, 0, 1), Knight(6, 0, 1), Rook(7, 0, 1)]
-        black_back_row = [Rook(0, 7, -1), Knight(1, 7, -1), Bishop(2, 7, -1), Queen(3, 7, -1), King(4, 7, -1),
-                          Bishop(5, 7, -1), Knight(6, 7, -1), Rook(7, 7, -1)]
-        b[0] = white_back_row
-        b[7] = black_back_row
 
-        # b[0][0] = King(0, 0, 1)
-        # b[7][4] = King(4, 7, -1)
+        b[5][5] = King(5, 5, -1)
+        b[7][7] = King(7, 7, 1)
         #
-        # #b[6][6] = Queen(6,6,1)
+        b[6][6] = Queen(6,6,-1)
         # b[1][3] = Pawn(3,1,1)
         # b[2][4] = Pawn(4,2,-1)
         # b[3][5] = Pawn(5,3,-1)
@@ -335,7 +332,7 @@ class Board:
         try:
             pos[0]
         except NameError:
-            raise Board.NoKing(f'{c} has no king.')
+            raise Board.NoKing(f'In is in check. {c} has no king.')
 
         checks = []
         for i in range(0, 8):
@@ -373,6 +370,8 @@ class Board:
         :return: Dictionary, key is tuple of position of a piece, value is a list of tuples as positions to where
         they key can move to.
         """
+        # if c == 0:
+        #     c = self.get_current_turn()
         consider = []
         possible_moves = collections.defaultdict(list)
         for i in self._board:
@@ -404,6 +403,54 @@ class Board:
                     self._move_count -= 1
 
         return possible_moves
+
+    def checkmate(self, color) -> bool:
+        """
+        Determines if a team is in checkmate. Returns the color of the team in checkmate. If there is no one in
+        checkmate, returns 0.
+        :param color: 1 for white, -1 for black.
+        :return: 1 for white in checkmate, -1 for black in checkmate, 0 for no one in checkmate
+        """
+        switch_team = False
+        ret = False
+        if self.get_current_turn() != color:
+            self.switch_turn()
+            switch_team = True
+        if self.is_in_check(color) and len(self.legal_moves()) == 0:
+            ret = True
+
+        if switch_team:
+            self.switch_turn()
+        return ret
+
+    def get_king_position(self, color: int) -> tuple:
+        """
+        Returns the position of the king as a tuple (x,y)
+        :param color: 1 or -1 for white or black respectively
+        :return: Tuple of the position of the king of specified color
+        """
+        if color == 1:
+            piece = self.get_piece_from_position(self._white_king_position)
+            if isinstance(piece, King) and piece.get_color() == color:
+                return self._white_king_position
+        elif color == -1:
+            piece = self.get_piece_from_position(self._black_king_position)
+            if isinstance(piece, King) and piece.get_color() == color:
+                return self._black_king_position
+        for i in range(8):  # y positions
+            for j in range(8):  # x positions
+                piece = self.get_piece_from_position((j,i))
+                if isinstance(piece, King):
+                    if color == 1 and piece.get_color() == 1:
+                        self._white_king_position = (j,i)
+                        return self._white_king_position
+                    elif color == -1 and piece.get_color() == -1:
+                        self._black_king_position = (j,i)
+                        return self._black_king_position
+        #print(self.__repr__())
+        raise Board.NoKing("In get_king_positions. No king found of color: {c}".format(c = color))
+
+
 
     def is_game_over(self):
         if len(self.legal_moves()) == 0:

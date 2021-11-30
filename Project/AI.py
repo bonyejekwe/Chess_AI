@@ -16,8 +16,10 @@
 import random
 from evaluate import Evaluation  # how to evaluate moves (to be implemented)
 from pieces import *
+from board import Board
 import functools
 import copy
+from math import sqrt
 
 # all_positions: a SINGLE list (of len() = 64) of all board positions to filter piece legal moves
 all_positions = [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (0, 1), (1, 1), (2, 1), (3, 1), (4, 1),
@@ -35,7 +37,7 @@ class AI:
         self.mode = mode  # "random", "basic", "medium", "advance"
 
     @staticmethod
-    def scoring(board, color):
+    def scoring(board: Board, color: int) -> int:
         """
         Generalized scoring system: score is positive if white is winning and negative if black
          is winning, the magnitude shows by how much one side is winning
@@ -45,19 +47,29 @@ class AI:
          """
         white = 0
         black = 0
-        white = sum([100 * board.get_piece_from_position(m).get_worth() for m in all_positions if
+
+        try:
+            if board.checkmate(1):
+                return -99999999999999999999999999
+            if board.checkmate(-1):
+                return 999999999999999999999999999
+        except Board.NoKing:
+            print(board)
+            pass
+
+        white = sum([30 * board.get_piece_from_position(m).get_worth() for m in all_positions if
                      isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(m).get_color() == 1])
-        black = sum([100 * board.get_piece_from_position(m).get_worth() for m in all_positions if
+        black = sum([30 * board.get_piece_from_position(m).get_worth() for m in all_positions if
                      isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(m).get_color() == -1])
         # print(white, black, (white - black) * color)
         score = (white - black) * color
 
         # TODO Update worth/use of each criteria wrt time (opening, endgame, etc.), possibly move to evaluation class
         # pawn development: increase score if pawns are moving up the board
-        white = sum([10 * (board.get_piece_from_position(m).get_position()[1] -
+        white = (1/board.get_current_move_count()) * sum([4 * (board.get_piece_from_position(m).get_position()[1] -
                     board.get_piece_from_position(m).original_position()[1]) for m in all_positions if
                      isinstance(board.get_piece_from_position(m), Pawn) and board.get_piece_from_position(m).get_color() == 1])
-        black = sum([-10 * (board.get_piece_from_position(m).get_position()[1] -
+        black = (1/board.get_current_move_count()) * sum([-4 * (board.get_piece_from_position(m).get_position()[1] -
                     board.get_piece_from_position(m).original_position()[1]) for m in all_positions if
                      isinstance(board.get_piece_from_position(m), Pawn) and board.get_piece_from_position(m).get_color() == -1])
         score += (white - black) * color
@@ -72,13 +84,25 @@ class AI:
         score += (white - black) * color
 
         # general piece development: increase weight if pieces have many options to move
-        white = sum([len(board.get_piece_from_position(m).legal_moves()) for m in all_positions if
+        white = 2 * sum([len(board.get_piece_from_position(m).legal_moves()) for m in all_positions if
                      isinstance(board.get_piece_from_position(m), Piece) and (not isinstance(board.get_piece_from_position(m), Pawn)) and
                      board.get_piece_from_position(m).get_color() == 1])
-        black = sum([len(board.get_piece_from_position(m).legal_moves()) for m in all_positions if
+        black = 2 * sum([len(board.get_piece_from_position(m).legal_moves()) for m in all_positions if
                      isinstance(board.get_piece_from_position(m), Piece) and (not isinstance(board.get_piece_from_position(m), Pawn)) and
                      board.get_piece_from_position(m).get_color() == -1])
         score += (white - black) * color
+
+        # favors opposing team's king in the corner
+        try:
+            if color == 1:
+                black_king_x, black_king_y = board.get_king_position(-1)
+                score += (board.get_current_move_count()/20) * (((black_king_x - 3)**2) + ((black_king_y - 3) ** 2)) * 20
+            else:
+                white_king_x, white_king_y = board.get_king_position(1)
+                score -= (board.get_current_move_count()/20) * ((white_king_x - 3)**2) + ((white_king_y - 3) ** 2) * 20
+        except Board.NoKing:
+            pass
+
         return score
 
     def get_team(self):
