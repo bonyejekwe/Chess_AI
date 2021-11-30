@@ -45,24 +45,30 @@ class AI:
         :param color: The team of the side in question
         :return: A generalized score (int) for the difference in total piece worth for each side.
          """
-        white = 0
-        black = 0
-
+        score = 0
         try:
             if board.checkmate(1):
-                return -99999999999999999999999999
+                return -1 * float("inf")
             if board.checkmate(-1):
-                return 999999999999999999999999999
+                return float("inf")
         except Board.NoKing:
-            print(board)
+            # print(board)
             pass
 
+        # update scoring if a team is in check
+#        if board.is_in_check(color):  # if you are in check
+#            score -= 100
+#        if board.is_in_check(-1 * color):  # if opponent is in check
+#            score += 100
+
+
+        # initial weighting: get the difference in worth for each team
         white = sum([30 * board.get_piece_from_position(m).get_worth() for m in all_positions if
                      isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(m).get_color() == 1])
         black = sum([30 * board.get_piece_from_position(m).get_worth() for m in all_positions if
                      isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(m).get_color() == -1])
         # print(white, black, (white - black) * color)
-        score = (white - black) * color
+        score += (white - black) * color
 
         # TODO Update worth/use of each criteria wrt time (opening, endgame, etc.), possibly move to evaluation class
         # pawn development: increase score if pawns are moving up the board
@@ -72,6 +78,15 @@ class AI:
         black = (1/board.get_current_move_count()) * sum([-4 * (board.get_piece_from_position(m).get_position()[1] -
                     board.get_piece_from_position(m).original_position()[1]) for m in all_positions if
                      isinstance(board.get_piece_from_position(m), Pawn) and board.get_piece_from_position(m).get_color() == -1])
+        score += (white - black) * color
+
+        # knight development: increase score if pawns are moving up the board
+        white = (3/board.get_current_move_count()) * sum([4 * (abs(2 - board.get_piece_from_position(m).get_position()[1] +
+                    board.get_piece_from_position(m).original_position()[1])) for m in all_positions if
+                     isinstance(board.get_piece_from_position(m), Knight) and board.get_piece_from_position(m).get_color() == 1])
+        black = (3/board.get_current_move_count()) * sum([-4 * (abs(2 - board.get_piece_from_position(m).get_position()[1] +
+                    board.get_piece_from_position(m).original_position()[1])) for m in all_positions if
+                     isinstance(board.get_piece_from_position(m), Knight) and board.get_piece_from_position(m).get_color() == -1])
         score += (white - black) * color
 
         # king development: increase score if king is not moving up the board
@@ -140,11 +155,11 @@ class AI:
         :param maximizing_color: The team maximizing their score overall
         :return: A tuple with best move and best evaluation"""
         # print(f'enter minimax w/ depth {depth}, maxim player {maximizing_player}, and maxim color {maximizing_color}')
-        b = board
+        # b = board
         # print(board)
 
         # base case: when depth = 0
-        if depth == 0 or b.is_game_over():
+        if depth == 0 or board.is_game_over():
             return None, self.scoring(board, maximizing_color)
 
         moves = self.format_legal_moves(board)
