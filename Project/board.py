@@ -464,7 +464,7 @@ class Board:
     def winner(self):
         if len(self.legal_moves()) == 0 and self.is_in_check(self._turn):
             print(f'checkmate')
-            return self.get_current_turn()
+            return self.get_current_turn()* -1
         elif len(self.legal_moves()) == 0:
             print(f'stalemate')
             return 2 * self.get_current_turn()
