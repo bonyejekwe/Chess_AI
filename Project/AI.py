@@ -37,6 +37,81 @@ class AI:
         self.mode = mode  # "random", "basic", "medium", "advance"
 
     @staticmethod
+    def pure_score(board):
+
+        try:
+            if board.checkmate(1):
+                return -999999999999
+            if board.checkmate(-1):
+                return 999999999999
+        except Board.NoKing:
+            # print(board)
+            pass
+
+        white = sum([board.get_piece_from_position(m).get_worth() for m in all_positions if
+                     isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(
+                         m).get_color() == 1])
+        black = sum([board.get_piece_from_position(m).get_worth() for m in all_positions if
+                     isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(
+                         m).get_color() == -1])
+        return white - black
+
+    def minimax_v2(self, board, depth, maximizing_player, minimizing):
+        """Implement minimax algorithm: the best move for the maximizing color looking ahead depth moves on the board
+        :param board: The current board being evaluated
+        :param depth: The current depth being evaluated
+        :param maximizing_player: The team maximizing their score at the current depth
+        :param maximizing_color: The team maximizing their score overall
+        :return: A tuple with best move and best evaluation"""
+        # print(f'enter minimax w/ depth {depth}, maxim player {maximizing_player}, and maxim color {maximizing_color}')
+        # b = board
+        # print(board)
+
+        # base case: when depth = 0
+        if depth == 0 or board.is_game_over():
+            return None, self.pure_score(board)
+
+        moves = self.format_legal_moves(board)
+        # ??
+        best_move = random.choice(moves)
+        # print(moves)
+        if maximizing_player:
+            for move in moves:
+                b1 = copy.deepcopy(board)
+                # print(move[0], move[1])
+                start, end = self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])
+                # print(start, end)
+                b1.move_piece(start, end)
+                curr_eval = self.minimax_v2(b1, depth - 1, False, True)[1]
+                try:
+                    max_eval
+                except UnboundLocalError:
+                    max_eval = curr_eval
+                if curr_eval > max_eval:
+                    max_eval = curr_eval
+                    best_move = move
+            # print(best_move, m_eval)
+            return best_move, max_eval
+        elif minimizing:
+            for move in moves:
+                b1 = copy.deepcopy(board)
+                # print(move[0], move[1])
+                start, end = self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])
+                # print(start, end)
+                b1.move_piece(start, end)
+                curr_eval = self.minimax_v2(b1, depth - 1, True, False)[1]
+                try:
+                    min_eval
+                except UnboundLocalError:
+                    min_eval = curr_eval
+                if curr_eval < min_eval:
+                    min_eval = curr_eval
+                    best_move = move
+            # print(best_move, m_eval)
+            return best_move, min_eval
+
+
+    @staticmethod
     def scoring(board: Board, color: int) -> int:
         """
         Generalized scoring system: score is positive if white is winning and negative if black
@@ -192,7 +267,7 @@ class AI:
     def make_move(self, board):
         """Choose (make a weighted choice) a move for the AI to make and make the move """
         if self.mode == "medium":
-            start_pos, end_pos = self.minimax(board, 2, self._team, self._team)[0]  # run minimax w/ depth 1
+            start_pos, end_pos = self.minimax_v2(board, 3, False, True)[0]  # run minimax w/ depth 1
         else:
             moves_dict = {m: 1 for m in self._legal_moves}
             # adjust weights according to AI decision making criteria
