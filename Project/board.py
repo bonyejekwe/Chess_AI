@@ -446,6 +446,8 @@ class Board:
                     if (isinstance(piece1, Pawn) and ((isinstance(piece2, Piece) and (e[0]-pos1x == 0))
                                                       or (not isinstance(piece2, Piece) and abs(e[0]-pos1x)==1))):
                         continue
+                    if isinstance(piece2, King):  # don't add moves that capture the king
+                        continue
                     self.update_pieces(piece1, e[0], e[1])  # piece1.move(e[0], e[1])  # temporarily make the move
                     if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
                         pos2x, pos2y = piece2.get_position()
