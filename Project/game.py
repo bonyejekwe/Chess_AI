@@ -11,7 +11,7 @@ from profiler import Profiler
 
 def main():
     winners = []
-    for _ in range(7):
+    for _ in range(1):
         result = run_game(2, mode1='medium')  # run AI vs AI (change argument to 1 for player vs AI)
         winners.append(result)
         Profiler.report()
