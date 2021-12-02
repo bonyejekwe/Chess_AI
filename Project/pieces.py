@@ -2,6 +2,8 @@
 # TODO: figure out how capturing is going to work with the pawn
 # TODO: figure out how en-passant and castling (if time permits)
 
+from profiler import Profiler
+
 # all_positions: a SINGLE list (of len() = 64) of all board positions to filter piece legal moves
 all_positions = [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (0, 1), (1, 1), (2, 1), (3, 1), (4, 1),
                  (5, 1), (6, 1), (7, 1), (0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (0, 3), (1, 3),
@@ -67,6 +69,7 @@ class Piece:
         else:
             raise InvalidBoardPlacementError(new_xpos, new_ypos)
 
+    @Profiler.profile
     def legal_moves(self):
         """Returns a list of legal moves for that piece based only on the restrictions for the piece type itself
         Inherited by all of the pieces to evaluate each piece's respective criteria"""

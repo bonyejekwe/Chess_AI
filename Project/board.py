@@ -3,6 +3,7 @@
 from pieces import *
 from typing import Union
 import collections
+from profiler import Profiler
 
 
 class Board:
@@ -82,6 +83,7 @@ class Board:
         elif color == -1:
             return self._black_pieces
 
+    @Profiler.profile
     def update_pieces(self, piece, xpos, ypos, revert=False, delete=False, adding=False):
         """Updates the dictionaries every time a piece is moved"""
         if adding:
@@ -132,6 +134,7 @@ class Board:
         self._board = b
         self._turn = 1
 
+    @Profiler.profile
     def move_piece(self, position1: tuple, position2: tuple) -> Union[Piece, None]:
         """
         Moves a piece from one position to another
@@ -202,6 +205,7 @@ class Board:
                     pos=position2, team=self._turn))
         return None
 
+    @Profiler.profile
     def pieces_in_the_way(self, pos1: tuple, pos2: tuple) -> list:
         """
         Finds the pieces in between where a piece is and where it wants to go. It ignores knights as knights can jump
@@ -377,6 +381,7 @@ class Board:
             string += "\n"
         return string
 
+    @Profiler.profile
     def is_in_check(self, c):
         # get the position of the corresponding king (from the dictionary of pieces left)
         if c == 1:
@@ -417,6 +422,7 @@ class Board:
         """
         return isinstance(piece, Piece) and piece.get_color() == 1
 
+    @Profiler.profile
     def legal_moves(self) -> dict:
         """
         Finds all possible legal moves of a certain color and returns them as a dictionary. Where the keys are

@@ -6,6 +6,7 @@
 
 from board import Board
 from AI import AI
+from profiler import Profiler
 
 
 def main():
@@ -13,9 +14,10 @@ def main():
     for _ in range(7):
         result = run_game(2, mode1='medium')  # run AI vs AI (change argument to 1 for player vs AI)
         winners.append(result)
+        Profiler.report()
     print("Winners", winners)
 
-
+@Profiler.profile
 def run_game(num=2, mode1="random", mode2="random"):
     """Run game using num of AI's (1=player vs AI, 2=AI vs AI). Defaults to AI vs AI"""
     game = Board()
@@ -32,7 +34,7 @@ def run_game(num=2, mode1="random", mode2="random"):
     print("the winner is...", game_winner)
     return game_winner
 
-
+@Profiler.profile
 def turn(game, ai_game, ai_game2=False):  # effectively defaults to no AI for game
     timed_out = -5
     while game.is_game_over() is False and game.get_current_move_count() < 200:

@@ -20,6 +20,7 @@ from board import Board
 import functools
 import copy
 from math import sqrt
+from profiler import Profiler
 
 class AI:
 
@@ -29,6 +30,7 @@ class AI:
         self.mode = mode  # "random", "basic", "medium", "advance"
 
     @staticmethod
+    @Profiler.profile
     def scoring(board: Board, color: int) -> int:
         """
         Generalized scoring system: score is positive if white is winning and negative if black
@@ -130,6 +132,7 @@ class AI:
         return chr(position[0] + 65), position[1]+1  # a tuple
 
     # TODO need to make scoring more complex as many board positions will have the same score currently
+    @Profiler.profile
     def minimax(self, board, depth, maximizing_player, maximizing_color):
         """Implement minimax algorithm: the best move for the maximizing color looking ahead depth moves on the board
         :param board: The current board being evaluated
@@ -164,6 +167,7 @@ class AI:
         # print(best_move, m_eval)
         return best_move, m_eval
 
+    @Profiler.profile
     def make_move(self, board):
         """Choose (make a weighted choice) a move for the AI to make and make the move """
         if self.mode == "medium":
