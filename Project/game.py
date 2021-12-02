@@ -90,4 +90,3 @@ def move(game: Board, game_ai: AI, game_ai2=False):
 
 if __name__ == "__main__":
     main()
-

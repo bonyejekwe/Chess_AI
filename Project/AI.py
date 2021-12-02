@@ -48,15 +48,27 @@ class AI:
             # print(board)
             pass
 
-        white = sum([board.get_piece_from_position(m).get_worth() for m in all_positions if
-                     isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(
-                         m).get_color() == 1])
-        black = sum([board.get_piece_from_position(m).get_worth() for m in all_positions if
-                     isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(
-                         m).get_color() == -1])
-        return white - black
+        white = 0
+        black = 0
+        for y in board._board:
+            for x in y:
+                if x is not None:
+                    if x.get_color() == 1:
+                        white += x.get_worth()
+                    else:
+                        black += x.get_worth()
 
-    def minimax_v2(self, board, depth, maximizing_player, minimizing):
+        return white - black
+        #white = sum([board.get_piece_from_position(m).get_worth() for m in all_positions if
+        #             isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(
+        #                 m).get_color() == 1])
+#
+        #black = sum([board.get_piece_from_position(m).get_worth() for m in all_positions if
+        #             isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(
+        #                 m).get_color() == -1])
+        #return white - black
+
+    def minimax_v2(self, board, depth, maximizing_player, minimizing, alpha, beta):
         """Implement minimax algorithm: the best move for the maximizing color looking ahead depth moves on the board
         :param board: The current board being evaluated
         :param depth: The current depth being evaluated
@@ -72,9 +84,19 @@ class AI:
             return None, self.pure_score(board)
 
         moves = self.format_legal_moves(board)
-        # ??
+
+
+        for move in moves:
+            if board.get_piece_from_position(move[0]) is not None and board.get_piece_from_position(move[1]) is not None:
+                first = board.get_piece_from_position(move[0]).get_color()
+                second = board.get_piece_from_position(move[1]).get_color()
+                if first != second:
+                    moves.remove(move)
+                    moves.insert(0, move)
+
         best_move = random.choice(moves)
-        # print(moves)
+
+
         if maximizing_player:
             for move in moves:
                 b1 = copy.deepcopy(board)
@@ -82,7 +104,9 @@ class AI:
                 start, end = self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])
                 # print(start, end)
                 b1.move_piece(start, end)
-                curr_eval = self.minimax_v2(b1, depth - 1, False, True)[1]
+                curr_eval = self.minimax_v2(b1, depth - 1, False, True, alpha, beta)[1]
+                #print(maximizing_player, depth, curr_eval, move)
+
                 try:
                     max_eval
                 except UnboundLocalError:
@@ -90,8 +114,15 @@ class AI:
                 if curr_eval > max_eval:
                     max_eval = curr_eval
                     best_move = move
-            # print(best_move, m_eval)
+
+                if curr_eval >= alpha:
+                    alpha = curr_eval
+                if beta > alpha and beta != 9999999999:
+                    print('Time saved!!!! b<a')
+                    return None, max_eval
+            #print("max", depth, best_move, max_eval)
             return best_move, max_eval
+
         elif minimizing:
             for move in moves:
                 b1 = copy.deepcopy(board)
@@ -99,7 +130,9 @@ class AI:
                 start, end = self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])
                 # print(start, end)
                 b1.move_piece(start, end)
-                curr_eval = self.minimax_v2(b1, depth - 1, True, False)[1]
+                curr_eval = self.minimax_v2(b1, depth - 1, True, False, alpha, beta)[1]
+                #print(maximizing_player, depth, curr_eval, move)
+
                 try:
                     min_eval
                 except UnboundLocalError:
@@ -107,9 +140,13 @@ class AI:
                 if curr_eval < min_eval:
                     min_eval = curr_eval
                     best_move = move
-            # print(best_move, m_eval)
+                if curr_eval <= beta:
+                    beta = curr_eval
+                if alpha < beta and alpha != -9999999999:
+                    print('Time saved!!!! a<b')
+                    return None, min_eval
+            #print("min", depth, best_move, min_eval)
             return best_move, min_eval
-
 
     @staticmethod
     def scoring(board: Board, color: int) -> int:
@@ -267,7 +304,7 @@ class AI:
     def make_move(self, board):
         """Choose (make a weighted choice) a move for the AI to make and make the move """
         if self.mode == "medium":
-            start_pos, end_pos = self.minimax_v2(board, 3, False, True)[0]  # run minimax w/ depth 1
+            start_pos, end_pos = self.minimax_v2(board, 3, False, True, -9999999999, 9999999999)[0]  # run minimax w/ depth 1
         else:
             moves_dict = {m: 1 for m in self._legal_moves}
             # adjust weights according to AI decision making criteria
