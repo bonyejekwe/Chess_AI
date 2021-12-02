@@ -14,10 +14,35 @@ def simulation(n, m1="random", m2="random", no_draws=True):
         winners = [r for r in winners if r != -5 and r != 0]
         print(f'Without draws: {winners}')
     f = time.time()
-    print(f"Time to run: {round((f - s), 2)} seconds.")
-    print(f"Game average time: {round(((f - s) / n), 2)} seconds.")
-    return winners
+    runtime = round((f - s), 2)
+    avg_runtime = round(((f - s) / n), 2)
+    print(f"Time to run: {runtime} seconds.")
+    print(f"Game average time: {avg_runtime} seconds.")
+    return winners, runtime, avg_runtime
 
 
-# l = simulation(12)
-simulation(7, m1="medium", m2='basic')
+# l = simulation(1)
+s1 = simulation(25, m1="random", m2='random')
+#s2 = simulation(9, m1="random", m2='medium')
+
+#s3 = simulation(9, m1="basic", m2='random')
+#s4 = simulation(9, m1="medium", m2='random')
+
+
+print(s1[0])
+print(s1[1])
+print(s1[2])
+
+"""
+print(s2[0])
+print(s2[1])
+print(s2[2])
+
+print(s3[0])
+print(s3[1])
+print(s3[2])
+
+print(s4[0])
+print(s4[1])
+print(s4[2])
+"""
