@@ -76,7 +76,7 @@ class Board:
                     elif self._board[i][j].get_color() == -1:
                         self._black_pieces[self._board[i][j]] = self._board[i][j].get_position()
 
-    def _get_pieces_left(self, color):
+    def get_pieces_left(self, color):
         if color == 1:
             return self._white_pieces
         elif color == -1:
