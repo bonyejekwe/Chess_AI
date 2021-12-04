@@ -120,7 +120,7 @@ class Board:
         b = [[None for _ in range(8)] for _ in range(8)]
 
 
-        b[5][5] = King(5, 5, -1)
+        b[4][4] = King(4, 4, -1)
         b[7][7] = King(7, 7, 1)
         #
         b[6][6] = Queen(6,6,-1)
@@ -133,6 +133,13 @@ class Board:
 
         self._board = b
         self._turn = 1
+        for i in range(0, 8):
+            for j in range(0, 8):
+                if isinstance(self._board[i][j], Piece):
+                    if self._board[i][j].get_color() == 1:
+                        self._white_pieces[self._board[i][j]] = self._board[i][j].get_position()
+                    elif self._board[i][j].get_color() == -1:
+                        self._black_pieces[self._board[i][j]] = self._board[i][j].get_position()
 
     @Profiler.profile
     def move_piece(self, position1: tuple, position2: tuple) -> Union[Piece, None]:
@@ -403,15 +410,15 @@ class Board:
             pos2 = p.get_position()
             if isinstance(p, Pawn):
                 if (pos2[0] + 1 == pos[0] or pos2[0] - 1 == pos[0]) and pos2[1] + p.get_color() == pos[1]:  # checks if the king is diagonal to the pawn
-                    checks.append(pos2)
+                    return True
             else:
                 if p.can_move_to(pos[0], pos[1]) and (type(p) == Knight or (not self.is_piece_in_the_way(pos2, pos))):
-                    checks.append(pos2)
-
-        if len(checks) != 0:
-            return True
-        else:
-            return False
+                    return True
+        return False
+        # if len(checks) != 0:
+        #     return True
+        # else:
+        #     return False
 
     @staticmethod
     def _is_white(piece: Piece) -> bool:
