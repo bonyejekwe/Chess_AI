@@ -48,15 +48,12 @@ class AI:
             # print(board)
             pass
 
-        white = 0
-        black = 0
-        for y in board._board:
-            for x in y:
-                if x is not None:
-                    if x.get_color() == 1:
-                        white += x.get_worth()
-                    else:
-                        black += x.get_worth()
+        white_pieces_left = board.get_pieces_left(1)
+        black_pieces_left = board.get_pieces_left(-1)
+        #num_moves = board.get_current_move_count()
+
+        white = sum([30 * p.get_worth() for p in white_pieces_left])
+        black = sum([30 * p.get_worth() for p in black_pieces_left])
 
         return white - black
         #white = sum([board.get_piece_from_position(m).get_worth() for m in all_positions if
@@ -86,16 +83,15 @@ class AI:
         moves = self.format_legal_moves(board)
 
 
-        for move in moves:
-            if board.get_piece_from_position(move[0]) is not None and board.get_piece_from_position(move[1]) is not None:
-                first = board.get_piece_from_position(move[0]).get_color()
-                second = board.get_piece_from_position(move[1]).get_color()
-                if first != second:
-                    moves.remove(move)
-                    moves.insert(0, move)
+        #for move in moves:
+        #    if board.get_piece_from_position(move[0]) is not None and board.get_piece_from_position(move[1]) is not None:
+        #        first = board.get_piece_from_position(move[0]).get_color()
+        #        second = board.get_piece_from_position(move[1]).get_color()
+        #        if first != second:
+        #            moves.remove(move)
+        #            moves.insert(0, move)
 
         best_move = random.choice(moves)
-
 
         if maximizing_player:
             for move in moves:
@@ -304,7 +300,10 @@ class AI:
     def make_move(self, board):
         """Choose (make a weighted choice) a move for the AI to make and make the move """
         if self.mode == "medium":
-            start_pos, end_pos = self.minimax_v2(board, 3, False, True, -9999999999, 9999999999)[0]  # run minimax w/ depth 1
+            if self.get_team() == -1:
+                start_pos, end_pos = self.minimax_v2(board, 3, False, True, -9999999999, 9999999999)[0]  # run minimax w/ depth 3
+            else:
+                start_pos, end_pos = self.minimax_v2(board, 3, True, False, -9999999999, 9999999999)[0]  # run minimax w/ depth 3
         else:
             moves_dict = {m: 1 for m in self._legal_moves}
             # adjust weights according to AI decision making criteria
