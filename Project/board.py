@@ -469,8 +469,8 @@ class Board:
                     self._board[pos1y][pos1x], self._board[e[1]][e[0]] = self._board[e[1]][e[0]], piece2
                     self._move_count -= 1
 
-        if len(possible_moves) == 0:
-            self._game_over = True
+        # if len(possible_moves) == 0:
+        #    self._game_over = True
 
         return possible_moves
 
@@ -521,7 +521,10 @@ class Board:
         raise Board.NoKing("In get_king_positions. No king found of color: {c}".format(c = color))
 
     def is_game_over(self):
-        if self._moves_since_capture > 49:
+        if len(self.legal_moves()) == 0:
+            print(f'game over')
+            self._game_over = True
+        elif self._moves_since_capture > 49:
             print(f'draw (50 move rule)')
             self._game_over = True
         return self._game_over
