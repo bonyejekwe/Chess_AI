@@ -60,23 +60,23 @@ class AI:
         num_moves = board.get_current_move_count()
 
         # initial weighting: get the difference in worth for each team
-        white = sum([25 * p.get_worth() for p in white_pieces_left])
-        black = sum([25 * p.get_worth() for p in black_pieces_left])
+        white = sum([30 * p.get_worth() for p in white_pieces_left])
+        black = sum([30 * p.get_worth() for p in black_pieces_left])
         # print(white, black, (white - black) * color)
         score += (white - black) * color
 
         # TODO Update worth/use of each criteria wrt time (opening, endgame, etc.), possibly move to evaluation class
         # pawn development: increase score if pawns are moving up the board
-        white = (1 / 2 * num_moves) * sum([2 * (p.get_position()[1] - p.original_position()[1]) for p in white_pieces_left
+        white = (1 / num_moves) * sum([4 * (p.get_position()[1] - p.original_position()[1]) for p in white_pieces_left
                                        if isinstance(p, Pawn)])
-        black = (1 / 2 * num_moves) * sum([2 * (p.get_position()[1] - p.original_position()[1]) for p in black_pieces_left
+        black = (1 / num_moves) * sum([4 * (p.get_position()[1] - p.original_position()[1]) for p in black_pieces_left
                                        if isinstance(p, Pawn)])
         score += (white - black) * color
 
-        # knight development: increase score if knights are moving up the board
+        # knight development: increase score if pawns are moving up the board
         white = (3 / num_moves) * sum([4 * (abs(2 - p.get_position()[1] + p.original_position()[1]))
                                        for p in white_pieces_left if isinstance(p, Knight)])
-        black = (3 / num_moves) * sum([4 * (abs(2 - p.get_position()[1] + p.original_position()[1]))
+        black = (3 / num_moves) * sum([-4 * (abs(2 - p.get_position()[1] + p.original_position()[1]))
                                        for p in black_pieces_left if isinstance(p, Knight)])
         score += (white - black) * color
 
@@ -88,18 +88,18 @@ class AI:
         score += (white - black) * color
 
         # general piece development: increase weight if pieces have many options to move
-        white = 13 * sum([len(p.legal_moves()) for p in white_pieces_left if not isinstance(p, Pawn)])
-        black = 13 * sum([len(p.legal_moves()) for p in black_pieces_left if not isinstance(p, Pawn)])
+        white = 2 * sum([len(p.legal_moves()) for p in white_pieces_left if not isinstance(p, Pawn)])
+        black = 2 * sum([len(p.legal_moves()) for p in black_pieces_left if not isinstance(p, Pawn)])
         score += (white - black) * color
 
         # favors opposing team's king in the corner
         try:
             if color == 1:
                 black_king_x, black_king_y = board.get_king_position(-1)
-                score += (board.get_current_move_count()*2/10) * (((black_king_x - 3)**2) + ((black_king_y - 3) ** 2)) * 20
+                score += (board.get_current_move_count()/20) * (((black_king_x - 3)**2) + ((black_king_y - 3) ** 2)) * 20
             else:
                 white_king_x, white_king_y = board.get_king_position(1)
-                score -= (board.get_current_move_count()*2/10) * ((white_king_x - 3)**2) + ((white_king_y - 3) ** 2) * 20
+                score -= (board.get_current_move_count()/20) * ((white_king_x - 3)**2) + ((white_king_y - 3) ** 2) * 20
         except Board.NoKing:
             pass
 
@@ -131,95 +131,17 @@ class AI:
         """
         return chr(position[0] + 65), position[1]+1  # a tuple
 
-    @Profiler.profile
-    def minimax_v2(self, board, depth, maximizing_player, minimizing, alpha, beta):
-        """Implement minimax algorithm: the best move for the maximizing color looking ahead depth moves on the board
-        :param board: The current board being evaluated
-        :param depth: The current depth being evaluated
-        :param maximizing_player: The team maximizing their score at the current depth
-        :param maximizing_color: The team maximizing their score overall
-        :return: A tuple with best move and best evaluation"""
-        # print(f'enter minimax w/ depth {depth}, maxim player {maximizing_player}, and maxim color {maximizing_color}')
-        # b = board
-        # print(board)
-
-        # base case: when depth = 0
-        if depth == 0 or board.is_game_over():
-            return None, self.pure_score(board)
-
-        moves = self.format_legal_moves(board)
-
-        for move in moves:
-            if board.get_piece_from_position(move[0]) is not None and board.get_piece_from_position(
-                    move[1]) is not None:
-                first = board.get_piece_from_position(move[0]).get_color()
-                second = board.get_piece_from_position(move[1]).get_color()
-                if first != second:
-                    moves.remove(move)
-                    moves.insert(0, move)
-
-        best_move = random.choice(moves)
-
-        if maximizing_player:
-            for move in moves:
-                b1 = copy.deepcopy(board)
-                # print(move[0], move[1])
-                start, end = self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])
-                # print(start, end)
-                b1.move_piece(start, end)
-                curr_eval = self.minimax_v2(b1, depth - 1, False, True, alpha, beta)[1]
-                # print(maximizing_player, depth, curr_eval, move)
-
-                try:
-                    max_eval
-                except UnboundLocalError:
-                    max_eval = curr_eval
-                if curr_eval > max_eval:
-                    max_eval = curr_eval
-                    best_move = move
-
-                if curr_eval >= alpha:
-                    alpha = curr_eval
-                if beta > alpha and beta != 9999999999:
-                    print('Time saved!!!! b<a')
-                    return None, max_eval
-            # print("max", depth, best_move, max_eval)
-            return best_move, max_eval
-
-        elif minimizing:
-            for move in moves:
-                b1 = copy.deepcopy(board)
-                # print(move[0], move[1])
-                start, end = self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])
-                # print(start, end)
-                b1.move_piece(start, end)
-                curr_eval = self.minimax_v2(b1, depth - 1, True, False, alpha, beta)[1]
-                # print(maximizing_player, depth, curr_eval, move)
-
-                try:
-                    min_eval
-                except UnboundLocalError:
-                    min_eval = curr_eval
-                if curr_eval < min_eval:
-                    min_eval = curr_eval
-                    best_move = move
-                if curr_eval <= beta:
-                    beta = curr_eval
-                if alpha < beta and alpha != -9999999999:
-                    print('Time saved!!!! a<b')
-                    return None, min_eval
-            # print("min", depth, best_move, min_eval)
-            return best_move, min_eval
-
     # TODO need to make scoring more complex as many board positions will have the same score currently
     @Profiler.profile
-    def minimax(self, board, depth, maximizing_player, maximizing_color):
+    def minimax(self, board, depth, maximizing_player, maximizing_color, alpha, beta):
         """Implement minimax algorithm: the best move for the maximizing color looking ahead depth moves on the board
         :param board: The current board being evaluated
         :param depth: The current depth being evaluated
         :param maximizing_player: The team maximizing their score at the current depth
         :param maximizing_color: The team maximizing their score overall
-        :return: A tuple with best move and best evaluation"""
+        :return: A tuple with best move and best evaluation
+        :alpha: highest maximizing eval
+        :beta: lowest minimizing eval"""
         # print(f'enter minimax w/ depth {depth}, maxim player {maximizing_player}, and maxim color {maximizing_color}')
         # b = board
         # print(board)
@@ -240,10 +162,24 @@ class AI:
             start, end = self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])
             # print(start, end)
             b1.move_piece(start, end)
-            curr_eval = self.minimax(b1, depth - 1, -1 * maximizing_player, maximizing_color)[1]
+            curr_eval = self.minimax(b1, depth - 1, -1 * maximizing_player, maximizing_color, alpha, beta)[1]
+            if min_or_max == 1:
+                if curr_eval > alpha:
+                    alpha = curr_eval
+                if beta > alpha and beta != 9999999999:
+                    print('Time saved!!!! b>a')
+                    return None, m_eval
+            else:
+                if curr_eval < beta:
+                    beta = curr_eval
+                if alpha < beta and alpha != -9999999999:
+                    print('Time saved!!!! a<b')
+                    return None, m_eval
+
             if (curr_eval - m_eval) * min_or_max > 0:
                 m_eval = curr_eval
                 best_move = move
+
         # print(best_move, m_eval)
         return best_move, m_eval
 
@@ -251,7 +187,7 @@ class AI:
     def make_move(self, board):
         """Choose (make a weighted choice) a move for the AI to make and make the move """
         if self.mode == "medium":
-            start_pos, end_pos = self.minimax(board, 2, self._team*-1, self._team)[0]  # run minimax w/ depth 1
+            start_pos, end_pos = self.minimax(board, 2, self._team, self._team, -9999999999, 9999999999)[0]  # run minimax w/ depth 1
         else:
             moves_dict = {m: 1 for m in self._legal_moves}
             # adjust weights according to AI decision making criteria
@@ -267,58 +203,3 @@ class AI:
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
         print(board)
-
-
-    # @Profiler.profile
-    # def make_move(self, board):
-    #     """Choose (make a weighted choice) a move for the AI to make and make the move """
-    #     if self.mode == "medium":
-    #         start_pos, end_pos = self.minimax_v2(board, 3, False, True, -9999999999, 9999999999)[0]  # run minimax w/ depth 1
-    #     else:
-    #         moves_dict = {m: 1 for m in self._legal_moves}
-    #         # adjust weights according to AI decision making criteria
-    #         e = Evaluation(moves_dict, board)
-    #         moves_dict = e.evaluated(self.mode)
-    #         # make the move
-    #         lis = [e for e in list(moves_dict.items())]
-    #         moves, weights = [elem[0] for elem in lis], [elem[1] for elem in lis]
-    #         if min(weights) < 0:
-    #             weights = [num - min(weights) for num in weights]
-    #         start_pos, end_pos = random.choices(moves, weights)[0]
-    #     start_pos, end_pos = self.num_pos_to_letter_pos(start_pos), self.num_pos_to_letter_pos(end_pos)
-    #     board.move_piece(start_pos, end_pos)  # move using chess letter notation
-    #     print(f"moving from {start_pos} to {end_pos}")
-    #     print(board)
-
-    @staticmethod
-    @Profiler.profile
-    def pure_score(board):
-
-        try:
-            if board.checkmate(1):
-                return -999999999999
-            if board.checkmate(-1):
-                return 999999999999
-        except Board.NoKing:
-            # print(board)
-            pass
-
-        white = 0
-        black = 0
-        for y in board._board:
-            for x in y:
-                if x is not None:
-                    if x.get_color() == 1:
-                        white += x.get_worth()
-                    else:
-                        black += x.get_worth()
-
-        return white - black
-        # white = sum([board.get_piece_from_position(m).get_worth() for m in all_positions if
-        #             isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(
-        #                 m).get_color() == 1])
-#
-# black = sum([board.get_piece_from_position(m).get_worth() for m in all_positions if
-#             isinstance(board.get_piece_from_position(m), Piece) and board.get_piece_from_position(
-#                 m).get_color() == -1])
-# return white - black
