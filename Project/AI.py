@@ -133,13 +133,15 @@ class AI:
 
     # TODO need to make scoring more complex as many board positions will have the same score currently
     @Profiler.profile
-    def minimax(self, board, depth, maximizing_player, maximizing_color):
+    def minimax(self, board, depth, maximizing_player, maximizing_color, alpha, beta):
         """Implement minimax algorithm: the best move for the maximizing color looking ahead depth moves on the board
         :param board: The current board being evaluated
         :param depth: The current depth being evaluated
         :param maximizing_player: The team maximizing their score at the current depth
         :param maximizing_color: The team maximizing their score overall
-        :return: A tuple with best move and best evaluation"""
+        :return: A tuple with best move and best evaluation
+        :alpha: highest maximizing eval
+        :beta: lowest minimizing eval"""
         # print(f'enter minimax w/ depth {depth}, maxim player {maximizing_player}, and maxim color {maximizing_color}')
         # b = board
         # print(board)
@@ -160,10 +162,24 @@ class AI:
             start, end = self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])
             # print(start, end)
             b1.move_piece(start, end)
-            curr_eval = self.minimax(b1, depth - 1, -1 * maximizing_player, maximizing_color)[1]
+            curr_eval = self.minimax(b1, depth - 1, -1 * maximizing_player, maximizing_color, alpha, beta)[1]
+            if min_or_max == 1:
+                if curr_eval > alpha:
+                    alpha = curr_eval
+                if beta > alpha and beta != 9999999999:
+                    print('Time saved!!!! b>a')
+                    return None, m_eval
+            else:
+                if curr_eval < beta:
+                    beta = curr_eval
+                if alpha < beta and alpha != -9999999999:
+                    print('Time saved!!!! a<b')
+                    return None, m_eval
+
             if (curr_eval - m_eval) * min_or_max > 0:
                 m_eval = curr_eval
                 best_move = move
+
         # print(best_move, m_eval)
         return best_move, m_eval
 
@@ -171,7 +187,7 @@ class AI:
     def make_move(self, board):
         """Choose (make a weighted choice) a move for the AI to make and make the move """
         if self.mode == "medium":
-            start_pos, end_pos = self.minimax(board, 2, self._team, self._team)[0]  # run minimax w/ depth 1
+            start_pos, end_pos = self.minimax(board, 2, self._team, self._team, -9999999999, 9999999999)[0]  # run minimax w/ depth 1
         else:
             moves_dict = {m: 1 for m in self._legal_moves}
             # adjust weights according to AI decision making criteria
