@@ -384,10 +384,13 @@ class Board:
     @Profiler.profile
     def is_in_check(self, c):
         # get the position of the corresponding king (from the dictionary of pieces left)
+        # set consider to corresponding dictionary
         if c == 1:
             pos = self._white_pieces[[p for p in self._white_pieces.keys() if isinstance(p, King)][0]]
+            consider = self._black_pieces
         else:
             pos = self._black_pieces[[p for p in self._black_pieces.keys() if isinstance(p, King)][0]]
+            consider = self._white_pieces
 
         try:
             pos[0]
@@ -395,17 +398,14 @@ class Board:
             raise Board.NoKing(f'In is in check. {c} has no king.')
 
         checks = []
-        if c == 1:
-            consider = self._black_pieces
-        else:
-            consider = self._white_pieces
+
         for p in consider.keys():
             pos2 = p.get_position()
             if isinstance(p, Pawn):
                 if (pos2[0] + 1 == pos[0] or pos2[0] - 1 == pos[0]) and pos2[1] + p.get_color() == pos[1]:  # checks if the king is diagonal to the pawn
                     checks.append(pos2)
             else:
-                if p.can_move_to(pos[0], pos[1]) and (type(p) == Knight or (not self.is_piece_in_the_way(pos2, pos))):
+                if p.can_move_to(pos[0], pos[1]) and (isinstance(p, Knight) or (not self.is_piece_in_the_way(pos2, pos))):
                     checks.append(pos2)
 
         if len(checks) != 0:
@@ -450,7 +450,7 @@ class Board:
                     if isinstance(piece2, Piece) and self.validate_turn_color(piece2):  # don't capture same team
                         continue
                     if (isinstance(piece1, Pawn) and ((isinstance(piece2, Piece) and (e[0]-pos1x == 0))
-                                                      or (not isinstance(piece2, Piece) and abs(e[0]-pos1x)==1))):
+                                                      or (not isinstance(piece2, Piece) and abs(e[0]-pos1x) == 1))):
                         continue
                     if isinstance(piece2, King):  # don't add moves that capture the king
                         continue
@@ -468,6 +468,9 @@ class Board:
                         self.update_pieces(piece2, pos2x, pos2y, adding=True)
                     self._board[pos1y][pos1x], self._board[e[1]][e[0]] = self._board[e[1]][e[0]], piece2
                     self._move_count -= 1
+
+        if len(possible_moves) == 0:
+            self._game_over = True
 
         return possible_moves
 
@@ -518,10 +521,7 @@ class Board:
         raise Board.NoKing("In get_king_positions. No king found of color: {c}".format(c = color))
 
     def is_game_over(self):
-        if len(self.legal_moves()) == 0:
-            print(f'game over')
-            self._game_over = True
-        elif self._moves_since_capture > 49:
+        if self._moves_since_capture > 49:
             print(f'draw (50 move rule)')
             self._game_over = True
         return self._game_over

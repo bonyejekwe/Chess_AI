@@ -60,37 +60,30 @@ class AI:
         num_moves = board.get_current_move_count()
 
         # initial weighting: get the difference in worth for each team
-        white = sum([30 * p.get_worth() for p in white_pieces_left])
-        black = sum([30 * p.get_worth() for p in black_pieces_left])
-        # print(white, black, (white - black) * color)
+        white = sum([50 * p.get_worth() for p in white_pieces_left])
+        black = sum([50 * p.get_worth() for p in black_pieces_left])
         score += (white - black) * color
 
         # TODO Update worth/use of each criteria wrt time (opening, endgame, etc.), possibly move to evaluation class
-        # pawn development: increase score if pawns are moving up the board
-        white = (1 / num_moves) * sum([4 * (p.get_position()[1] - p.original_position()[1]) for p in white_pieces_left
-                                       if isinstance(p, Pawn)])
-        black = (1 / num_moves) * sum([4 * (p.get_position()[1] - p.original_position()[1]) for p in black_pieces_left
-                                       if isinstance(p, Pawn)])
-        score += (white - black) * color
+        if color == 1: # white
+            # pawn development: increase score if pawns are moving up the board
+            score += sum([5 * (p.get_position()[1] - 1) for p in white_pieces_left if isinstance(p, Pawn)]) / num_moves
+            # knight development: increase score if pawns are moving up the board
+            score += sum([20 * (5 - abs(3 - p.get_position()[1])) for p in white_pieces_left if isinstance(p, Knight)]) / num_moves
+            # king development: increase score if king is not moving up the board
+            score = sum([80 - (10 * (p.get_position()[1] - p.original_position()[1])) for p in white_pieces_left if isinstance(p, King)])
+            # general piece development: increase weight if pieces have many options to move
+            score += 15 * sum([len(p.legal_moves()) for p in white_pieces_left if not isinstance(p, Pawn)])
 
-        # knight development: increase score if pawns are moving up the board
-        white = (3 / num_moves) * sum([4 * (abs(2 - p.get_position()[1] + p.original_position()[1]))
-                                       for p in white_pieces_left if isinstance(p, Knight)])
-        black = (3 / num_moves) * sum([-4 * (abs(2 - p.get_position()[1] + p.original_position()[1]))
-                                       for p in black_pieces_left if isinstance(p, Knight)])
-        score += (white - black) * color
-
-        # king development: increase score if king is not moving up the board
-        white = sum([80 - (10 * (p.get_position()[1] - p.original_position()[1])) for p in white_pieces_left
-                    if isinstance(p, King)])
-        black = sum([80 + (10 * (p.get_position()[1] - p.original_position()[1])) for p in white_pieces_left
-                    if isinstance(p, King)])
-        score += (white - black) * color
-
-        # general piece development: increase weight if pieces have many options to move
-        white = 2 * sum([len(p.legal_moves()) for p in white_pieces_left if not isinstance(p, Pawn)])
-        black = 2 * sum([len(p.legal_moves()) for p in black_pieces_left if not isinstance(p, Pawn)])
-        score += (white - black) * color
+        else:
+            # pawn development: increase score if pawns are moving up the board
+            score += sum([5 * (6 - p.get_position()[1]) for p in black_pieces_left if isinstance(p, Pawn)]) / num_moves
+            # knight development: increase score if pawns are moving up the board
+            score += sum([20 * (5 - abs(4 - p.get_position()[1])) for p in black_pieces_left if isinstance(p, Knight)]) / num_moves
+            # king development: increase score if king is not moving up the board
+            score += sum([80 + (10 * (p.get_position()[1] - p.original_position()[1])) for p in white_pieces_left if isinstance(p, King)])
+            # general piece development: increase weight if pieces have many options to move
+            score += 15 * sum([len(p.legal_moves()) for p in black_pieces_left if not isinstance(p, Pawn)])
 
         # favors opposing team's king in the corner
         try:
@@ -187,7 +180,7 @@ class AI:
     def make_move(self, board):
         """Choose (make a weighted choice) a move for the AI to make and make the move """
         if self.mode == "medium":
-            start_pos, end_pos = self.minimax(board, 2, self._team, self._team, -9999999999, 9999999999)[0]  # run minimax w/ depth 1
+            start_pos, end_pos = self.minimax(board, 3, self._team, self._team, -9999999999, 9999999999)[0]  # run minimax w/ depth 1
         else:
             moves_dict = {m: 1 for m in self._legal_moves}
             # adjust weights according to AI decision making criteria
