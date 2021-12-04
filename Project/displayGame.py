@@ -50,7 +50,7 @@ class playGame :
         
         # Get the game result
         result = self.run_game(AI_mode)
-        
+        Profiler.report()
         # Print the game result
         print('The winner is: {} !!!'.format(result))
 

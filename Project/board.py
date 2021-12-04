@@ -50,10 +50,10 @@ class Board:
         """
         Starts game, fills in all pieces in the standard starting
         """
-        white_back_row = [Rook(0, 0, 1), Knight(1, 0, 1), Bishop(2, 0, 1), Queen(3, 0, 1), King(4, 0, 1),
+        white_back_row = [Rook(0, 0, 1), Knight(1, 0, 1), Bishop(2, 0, 1), King(3, 0, 1), Queen(4, 0, 1),
                           Bishop(5, 0, 1), Knight(6, 0, 1), Rook(7, 0, 1)]
         white_pawns = [Pawn(i, 1, 1) for i in range(8)]
-        black_back_row = [Rook(0, 7, -1), Knight(1, 7, -1), Bishop(2, 7, -1), Queen(3, 7, -1), King(4, 7, -1),
+        black_back_row = [Rook(0, 7, -1), Knight(1, 7, -1), Bishop(2, 7, -1), King(3, 7, -1), Queen(4, 7, -1),
                           Bishop(5, 7, -1), Knight(6, 7, -1), Rook(7, 7, -1)]
         black_pawns = [Pawn(i, 6, -1) for i in range(8)]
         empty = [[None for _ in range(8)] for _ in range(4)]
