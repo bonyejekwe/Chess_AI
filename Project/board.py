@@ -119,17 +119,16 @@ class Board:
         """
         b = [[None for _ in range(8)] for _ in range(8)]
 
-
         b[5][5] = King(5, 5, -1)
         b[7][7] = King(7, 7, 1)
         #
-        b[6][6] = Queen(6,6,-1)
-        # b[1][3] = Pawn(3,1,1)
-        # b[2][4] = Pawn(4,2,-1)
-        # b[3][5] = Pawn(5,3,-1)
-        # #b[3][3] = Rook(3,3,-1)
-        # b[7][5] = Pawn(5,7,1)
-        #b[5][4] = Pawn(4,5,1)
+        b[6][6] = Queen(6, 6, -1)
+        # b[1][3] = Pawn(3, 1, 1)
+        # b[2][4] = Pawn(4, 2, -1)
+        # b[3][5] = Pawn(5, 3, -1)
+        # #b[3][3] = Rook(3, 3, -1)
+        # b[7][5] = Pawn(5, 7, 1)
+        # b[5][4] = Pawn(4, 5, 1)
 
         self._board = b
         self._turn = 1
@@ -166,7 +165,7 @@ class Board:
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
             if isinstance(piece1, Pawn) and pos2x != pos1x:  # sets pawn piece capture to false
                 raise Board.InvalidPawnMove("Trying to move the pawn from {pos1} to {pos2}, which is diagonal but the"
-                                            "pawn is not capturing".format(pos1 = position1, pos2 = position2))
+                                            "pawn is not capturing".format(pos1=position1, pos2=position2))
             if not (isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0)):  # regular move, makes sure a pawn doesn't have to be promoted
                 self.update_pieces(piece1, pos2x, pos2y)  # piece1.move(pos2x, pos2y)
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
@@ -185,7 +184,7 @@ class Board:
             if not self.validate_turn_color(piece2):
                 if isinstance(piece1, Pawn) and abs(pos2x - pos1x) != 1:
                     raise Board.InvalidPawnMove("Trying to move the pawn from {pos1} to {pos2} to capture, but did"
-                                                "not move diagonal".format(pos1 = position1, pos2 = position2))
+                                                "not move diagonal".format(pos1=position1, pos2=position2))
                 self.update_pieces(piece1, pos2x, pos2y)  # piece1.move(pos2x, pos2y)  # moves individual piece object
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
                 self._move_count += 1
@@ -277,10 +276,7 @@ class Board:
         :return: True if there are pieces in the way, false if not
         """
         in_the_way = self.pieces_in_the_way(pos1, pos2)
-        if in_the_way.count(None) != len(in_the_way):
-            return True
-        else:
-            return False
+        return in_the_way.count(None) != len(in_the_way)
 
     def switch_turn(self):
         """
@@ -302,8 +298,7 @@ class Board:
             raise IndexError("The desired position is out of bounds of the board")
 
         if not (isinstance(piece, Piece) or piece is None):  # makes sure position actually holds a piece or is empty
-            raise ValueError("Piece should not be of type {t} and value {v}".format(t=type(piece),
-                                                                                    v=piece))
+            raise ValueError("Piece should not be of type {t} and value {v}".format(t=type(piece), v=piece))
         return piece
 
     def is_position_empty(self, position: tuple) -> bool:
@@ -330,10 +325,7 @@ class Board:
         :param piece: The piece you would like to check
         :return: True if the color and turn match up, false if not
         """
-        if self._turn == piece.get_color():
-            return True
-        else:
-            return False
+        return self._turn == piece.get_color()
 
     @staticmethod
     def letter_pos_to_num_pos(position: tuple) -> tuple:
@@ -342,7 +334,7 @@ class Board:
         :param position: Position you would like convert
         :return: A tuple with two numbers as position
         """
-        return (ord(position[0]) - 65, position[1] - 1)
+        return ord(position[0]) - 65, position[1] - 1
 
     def get_board(self) -> list:
         """
@@ -382,7 +374,10 @@ class Board:
         return string
 
     @Profiler.profile
-    def is_in_check(self, c):
+    def is_in_check(self, c: int):
+        """Returns where a specified team is in check or not
+        :param c: the color corresponding to the specified team
+        :return True if that team is in check and false otherwise"""
         # get the position of the corresponding king (from the dictionary of pieces left)
         # set consider to corresponding dictionary
         if c == 1:
@@ -408,10 +403,7 @@ class Board:
                 if p.can_move_to(pos[0], pos[1]) and (isinstance(p, Knight) or (not self.is_piece_in_the_way(pos2, pos))):
                     checks.append(pos2)
 
-        if len(checks) != 0:
-            return True
-        else:
-            return False
+        return len(checks) != 0
 
     @staticmethod
     def _is_white(piece: Piece) -> bool:
@@ -435,13 +427,14 @@ class Board:
         possible_moves = collections.defaultdict(list)
 
         if self.get_current_turn() == 1:
-            consider = self._white_pieces.keys()
+            consider = self._white_pieces
         else:
-            consider = self._black_pieces.keys()
+            consider = self._black_pieces
 
-        for piece1 in consider:
+        for piece1 in consider.keys():
             possible = piece1.legal_moves()
-            piece1_position = piece1.get_position()
+            piece1_position = consider[piece1]
+            # print(piece1_position == consider[piece1])
             pos1x, pos1y = piece1_position
 
             for e in possible:
@@ -509,16 +502,16 @@ class Board:
                 return self._black_king_position
         for i in range(8):  # y positions
             for j in range(8):  # x positions
-                piece = self.get_piece_from_position((j,i))
+                piece = self.get_piece_from_position((j, i))
                 if isinstance(piece, King):
                     if color == 1 and piece.get_color() == 1:
-                        self._white_king_position = (j,i)
+                        self._white_king_position = (j, i)
                         return self._white_king_position
                     elif color == -1 and piece.get_color() == -1:
-                        self._black_king_position = (j,i)
+                        self._black_king_position = (j, i)
                         return self._black_king_position
-        #print(self.__repr__())
-        raise Board.NoKing("In get_king_positions. No king found of color: {c}".format(c = color))
+        # print(self.__repr__())
+        raise Board.NoKing("In get_king_positions. No king found of color: {c}".format(c=color))
 
     def is_game_over(self):
         if len(self.legal_moves()) == 0:
@@ -532,7 +525,7 @@ class Board:
     def winner(self):
         if len(self.legal_moves()) == 0 and self.is_in_check(self._turn):
             print(f'checkmate')
-            return self.get_current_turn()* -1
+            return self.get_current_turn() * -1
         elif len(self.legal_moves()) == 0:
             print(f'stalemate')
             return 2 * self.get_current_turn()
