@@ -398,12 +398,14 @@ class Board:
             pos2 = p.get_position()
             if isinstance(p, Pawn):
                 if (pos2[0] + 1 == pos[0] or pos2[0] - 1 == pos[0]) and pos2[1] + p.get_color() == pos[1]:  # checks if the king is diagonal to the pawn
-                    checks.append(pos2)
+                    return True
+                    # checks.append(pos2)
             else:
                 if p.can_move_to(pos[0], pos[1]) and (isinstance(p, Knight) or (not self.is_piece_in_the_way(pos2, pos))):
-                    checks.append(pos2)
-
-        return len(checks) != 0
+                    return True
+                    # checks.append(pos2)
+        return False
+        # return len(checks) != 0
 
     @staticmethod
     def _is_white(piece: Piece) -> bool:
