@@ -24,6 +24,8 @@ class AI:
         self._team = color
         self._legal_moves = []
         self.mode = mode  # "random", "basic", "medium", "advance"
+        self.alpha = -999999999
+        self.beta = 999999999
 
     @staticmethod
     @Profiler.profile
@@ -38,9 +40,9 @@ class AI:
         score = 0
         try:
             if board.checkmate(1):
-                return -9999999999
+                return -99999999
             if board.checkmate(-1):
-                return 9999999999
+                return 99999999
         except Board.NoKing:
             print(board)
             pass
@@ -56,42 +58,43 @@ class AI:
         num_moves = board.get_current_move_count()
 
         # initial weighting: get the difference in worth for each team
-        white = sum([50 * p.get_worth() for p in white_pieces_left])
-        black = sum([50 * p.get_worth() for p in black_pieces_left])
-        score += (white - black) * color
-
+        white = sum([p.get_worth() for p in white_pieces_left])
+        black = sum([p.get_worth() for p in black_pieces_left])
+        score += (white - black)
+        white_score = 0
+        black_score = 0
         # TODO Update worth/use of each criteria wrt time (opening, endgame, etc.), possibly move to evaluation class
-        if color == 1:  # white
-            # pawn development: increase score if pawns are moving up the board
-            score += sum([5 * (p.get_position()[1] - 1) for p in white_pieces_left if isinstance(p, Pawn)]) / num_moves
-            # knight development: increase score if pawns are moving up the board
-            score += sum([20 * (5 - abs(3 - p.get_position()[1])) for p in white_pieces_left if isinstance(p, Knight)]) / num_moves
-            # king development: increase score if king is not moving up the board
-            score = sum([80 - (10 * (p.get_position()[1] - p.original_position()[1])) for p in white_pieces_left if isinstance(p, King)])
-            # general piece development: increase weight if pieces have many options to move
-            score += 15 * sum([len(p.legal_moves()) for p in white_pieces_left if not isinstance(p, Pawn)])
 
-        else:  # black
-            # pawn development: increase score if pawns are moving up the board
-            score += sum([5 * (6 - p.get_position()[1]) for p in black_pieces_left if isinstance(p, Pawn)]) / num_moves
-            # knight development: increase score if pawns are moving up the board
-            score += sum([20 * (5 - abs(4 - p.get_position()[1])) for p in black_pieces_left if isinstance(p, Knight)]) / num_moves
-            # king development: increase score if king is not moving up the board
-            score += sum([80 + (10 * (p.get_position()[1] - p.original_position()[1])) for p in white_pieces_left if isinstance(p, King)])
-            # general piece development: increase weight if pieces have many options to move
-            score += 15 * sum([len(p.legal_moves()) for p in black_pieces_left if not isinstance(p, Pawn)])
+        # pawn development: increase score if pawns are moving up the board
+        white_score += sum([5 * (p.get_position()[1] - 1) for p in white_pieces_left if isinstance(p, Pawn)]) / num_moves
+        # knight development: increase score if pawns are moving up the board
+        white_score += sum([20 * (5 - abs(3 - p.get_position()[1])) for p in white_pieces_left if isinstance(p, Knight)]) / num_moves
+        # king development: increase score if king is not moving up the board
+        white_score += sum([80 - (10 * (p.get_position()[1] - p.original_position()[1])) for p in white_pieces_left if isinstance(p, King)])
+        # general piece development: increase weight if pieces have many options to move
+        white_score += 15 * sum([len(p.legal_moves()) for p in white_pieces_left if not isinstance(p, Pawn)])
+#
+        # black
+        # pawn development: increase score if pawns are moving up the board
+        black_score += sum([5 * (6 - p.get_position()[1]) for p in black_pieces_left if isinstance(p, Pawn)]) / num_moves
+        # knight development: increase score if pawns are moving up the board
+        black_score += sum([20 * (5 - abs(4 - p.get_position()[1])) for p in black_pieces_left if isinstance(p, Knight)]) / num_moves
+        # king development: increase score if king is not moving up the board
+        black_score += sum([80 + (10 * (p.get_position()[1] - p.original_position()[1])) for p in black_pieces_left if isinstance(p, King)])
+        # general piece development: increase weight if pieces have many options to move
+        black_score += 15 * sum([len(p.legal_moves()) for p in black_pieces_left if not isinstance(p, Pawn)])
 
         # favors opposing team's king in the corner
-        try:
-            if color == 1:
-                black_king_x, black_king_y = board.get_king_position(-1)
-                score += (board.get_current_move_count()/20) * (((black_king_x - 3)**2) + ((black_king_y - 3) ** 2)) * 20
-            else:
-                white_king_x, white_king_y = board.get_king_position(1)
-                score -= (board.get_current_move_count()/20) * ((white_king_x - 3)**2) + ((white_king_y - 3) ** 2) * 20
-        except Board.NoKing:
-            pass
-
+        #try:
+        #    if color == 1:
+        #        black_king_x, black_king_y = board.get_king_position(-1)
+        #        score += (board.get_current_move_count()/20) * (((black_king_x - 3)**2) + ((black_king_y - 3) ** 2)) * 20
+        #    else:
+        #        white_king_x, white_king_y = board.get_king_position(1)
+        #        score -= (board.get_current_move_count()/20) * ((white_king_x - 3)**2) + ((white_king_y - 3) ** 2) * 20
+        #except Board.NoKing:
+        #    pass
+        score += (white_score-black_score)
         return score
 
     def get_team(self):
@@ -122,14 +125,12 @@ class AI:
 
     # TODO need to make scoring more complex as many board positions will have the same score currently
     @Profiler.profile
-    def minimax(self, board, depth, maximizing_player, maximizing_color, alpha, beta):
+    def minimax(self, board, depth, maximizing_player, maximizing_color):
         """Implement minimax algorithm: the best move for the maximizing color looking ahead depth moves on the board
         :param board: The current board being evaluated
         :param depth: The current depth being evaluated
         :param maximizing_player: The team maximizing their score at the current depth
         :param maximizing_color: The team maximizing their score overall
-        :param alpha: highest maximizing eval
-        :param beta: lowest minimizing eval
         :return: A tuple with best move and best evaluation"""
 
         # base case: depth = 0
@@ -154,7 +155,7 @@ class AI:
             board.switch_turn()
 
             # make a recursive call to minimax to find the best evaluation at a specified depth
-            curr_eval = self.minimax(board, depth - 1, -1 * maximizing_player, maximizing_color, alpha, beta)[1]
+            curr_eval = self.minimax(board, depth - 1, -1 * maximizing_player, maximizing_color)[1]
 
             # unmake the move on the board
             board.switch_turn()
@@ -166,17 +167,23 @@ class AI:
 
             # update the best found move and score if necessary
             if min_or_max == 1:
-                if curr_eval > alpha:
-                    alpha = curr_eval
-                if beta > alpha and beta != 9999999999:
+                if self.alpha == -999999999:
+                    self.alpha = curr_eval
+                print('maximizing!!', min_or_max, curr_eval, "alpha: ", self.alpha, 'beta: ', self.beta, 'move: ', (self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])))
+                if curr_eval > self.alpha:
+                    self.alpha = curr_eval
+                if self.beta > self.alpha and self.beta != 999999999:
                     print('Time saved!!!! b>a')
-                    return None, m_eval
+                    break
             else:
-                if curr_eval < beta:
-                    beta = curr_eval
-                if alpha < beta and alpha != -9999999999:
+                if self.beta == 999999999:
+                    self.beta = curr_eval
+                print('minimizing!!', min_or_max, curr_eval, "alpha: ", self.alpha, 'beta : ', self.beta,'move: ', (self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])))
+                if curr_eval < self.beta:
+                    self.beta = curr_eval
+                if self.alpha < self.beta and self.alpha != -999999999:
                     print('Time saved!!!! a<b')
-                    return None, m_eval
+                    break
 
             if (curr_eval - m_eval) * min_or_max > 0:
                 m_eval = curr_eval
@@ -189,7 +196,12 @@ class AI:
     def make_move(self, board: Board):
         """Choose (make a weighted choice) a move for the AI to make and make the move """
         if self.mode == "medium":
-            start_pos, end_pos = self.minimax(board, 2, self._team, self._team, -9999999999, 9999999999)[0]  # minimax
+            if self._team == 1:
+                start_pos, end_pos = self.minimax(board, 2, 1, 1)[0]  # minimax
+            elif self._team == -1:
+                start_pos, end_pos = self.minimax(board, 2, 1, -1)[0]  # minimax
+            self.alpha = -999999999
+            self.beta = 999999999
         else:
             moves_dict = {m: 1 for m in self._legal_moves}
             # adjust weights according to AI decision making criteria
