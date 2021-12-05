@@ -58,8 +58,8 @@ class AI:
         num_moves = board.get_current_move_count()
 
         # initial weighting: get the difference in worth for each team
-        white = sum([p.get_worth() for p in white_pieces_left])
-        black = sum([p.get_worth() for p in black_pieces_left])
+        white = sum([50 * p.get_worth() for p in white_pieces_left])
+        black = sum([50 * p.get_worth() for p in black_pieces_left])
         score += (white - black)
         white_score = 0
         black_score = 0
