@@ -41,6 +41,7 @@ class Board:
         self._moves_since_capture = 0
         self._white_king_position = (4, 0)  # x, y indices of the white king
         self._black_king_position = (4, 7)  # x, y indices of the black king
+        self._legal_moves = {}  # dictionary to temporarily store legal moves
 
         # dictionaries to store references to the piece objects (key=object, val = position tuple)
         self._white_pieces = {}
@@ -280,9 +281,10 @@ class Board:
 
     def switch_turn(self):
         """
-        Switches the turn from white to black or black to white
+        Switches the turn from white to black or black to white. Resets the dictionary for stored legal moves
         """
         self._turn *= -1
+        self._legal_moves = {}
 
     def get_piece_from_position(self, position: tuple) -> Piece:
         """
@@ -425,6 +427,8 @@ class Board:
         :return: Dictionary, key is tuple of position of a piece, value is a list of tuples as positions to where
         they key can move to.
         """
+        if self._legal_moves != {}:
+            return self._legal_moves
 
         possible_moves = collections.defaultdict(list)
 
@@ -467,6 +471,7 @@ class Board:
         # if len(possible_moves) == 0:
         #    self._game_over = True
 
+        self._legal_moves = possible_moves
         return possible_moves
 
     def checkmate(self, color) -> bool:
