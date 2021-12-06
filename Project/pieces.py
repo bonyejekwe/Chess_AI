@@ -22,6 +22,12 @@ class InvalidBoardPlacementError(Exception):
 
 class Piece:
 
+    @staticmethod
+    def piece_criteria(x1, y1, x2, y2):
+        """Return true if move to (x2, y2) fulfills criteria for specific piece based on current position (x1, y1) and piece itself
+        Here: true if new x, y are both on the board and not the same as the old x, y"""
+        return ((0 <= x2 <= 7) and (0 <= y2 <= 7)) and not (x2 == x1 and y2 == y1)
+
     def __init__(self, xpos, ypos, color: int):
         self._original_xpos = xpos
         self._original_ypos = ypos
@@ -125,15 +131,38 @@ class Pawn(Piece):
 
 class Knight(Piece):
 
+    @staticmethod
+    def knight_criteria(x1, y1, x2, y2):
+        """Return true if move to (x2, y2) fulfills criteria for specific piece based on current position (x1, y1) and piece itself
+        Here: true if new x, y are both on the board and not the same as the old x, y"""
+        return Piece.piece_criteria(x1, y1, x2, y2) and (abs(x2 - x1) == 1 and abs(y2 - y1) == 2 or
+                                            (abs(x2 - x1) == 2 and abs(y2 - y1) == 1))
+
+    @staticmethod
+    def knight_legal_moves(x1, y1):
+        """Returns a set of legal moves for that piece based only on the position (x1, y1) and the restrictions for the piece type itself
+        Inherited by all of the pieces to evaluate each piece's respective criteria"""
+        return set(filter(lambda move: Knight.knight_criteria(x1, y1, move[0], move[1]), all_positions))
+
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
         self._worth = 3
+        self._legal_moves_list = {pos: Knight.knight_legal_moves(pos[0], pos[1]) for pos in all_positions}
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
         Here: true if piece criteria and fulfills knight l-shape movement criteria"""
         return (super().criteria(x, y) and (abs(x - self._xpos) == 1 and abs(y - self._ypos) == 2 or
                                             (abs(x - self._xpos) == 2 and abs(y - self._ypos) == 1)))
+
+    def legal_moves(self):
+        """Returns a set of legal moves for that piece based only on the restrictions for the piece type itself
+        Inherited by all of the pieces to evaluate each piece's respective criteria"""
+        return self._legal_moves_list[self.get_position()]
+
+    def can_move_to(self, new_xpos, new_ypos):
+        """Return true if piece can move to (new_xpos, new_ypos), false otherwise"""
+        return (new_xpos, new_ypos) in self._legal_moves_list[self.get_position()]
 
     def move(self, new_xpos, new_ypos):
         if self.criteria(new_xpos, new_ypos):
@@ -150,14 +179,37 @@ class Knight(Piece):
 
 class Bishop(Piece):
 
+    @staticmethod
+    def bishop_criteria(x1, y1, x2, y2):
+        """Return true if move to (x2, y2) fulfills criteria for specific piece based on current position (x1, y1) and piece itself
+        Here: true if new x, y are both on the board and not the same as the old x, y"""
+        return Piece.piece_criteria(x1, y1, x2, y2) and (abs(x2 - x1) == abs(y2 - y1))
+
+    @staticmethod
+    def bishop_legal_moves(x1, y1):
+        """Returns a set of legal moves for that piece based only on the position (x1, y1) and the restrictions for the piece type itself
+        Inherited by all of the pieces to evaluate each piece's respective criteria"""
+        return set(filter(lambda move: Bishop.bishop_criteria(x1, y1, move[0], move[1]), all_positions))
+
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
         self._worth = 3
+        self._legal_moves_list = {pos: Bishop.bishop_legal_moves(pos[0], pos[1]) for pos in all_positions}
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
         Here: true if piece criteria and fulfills bishop diagonal movement criteria"""
         return super().criteria(x, y) and (abs(x - self._xpos) == abs(y - self._ypos))
+
+    @Profiler.profile
+    def legal_moves(self):
+        """Returns a set of legal moves for that piece based only on the restrictions for the piece type itself
+        Inherited by all of the pieces to evaluate each piece's respective criteria"""
+        return self._legal_moves_list[self.get_position()]
+
+    def can_move_to(self, new_xpos, new_ypos):
+        """Return true if piece can move to (new_xpos, new_ypos), false otherwise"""
+        return (new_xpos, new_ypos) in self._legal_moves_list[self.get_position()]
 
     def move(self, new_xpos, new_ypos):
         if self.criteria(new_xpos, new_ypos):
@@ -198,9 +250,22 @@ class Rook(Piece):
 
 class Queen(Piece):
 
+    @staticmethod
+    def queen_criteria(x1, y1, x2, y2):
+        """Return true if move to (x2, y2) fulfills criteria for specific piece based on current position (x1, y1) and piece itself
+        Here: true if new x, y are both on the board and not the same as the old x, y"""
+        return Piece.piece_criteria(x1, y1, x2, y2) and ((x2 - x1) * (y2 - y1) == 0 or (abs(x2 - x1) == abs(y2 - y1)))
+
+    @staticmethod
+    def queen_legal_moves(x1, y1):
+        """Returns a set of legal moves for that piece based only on the position (x1, y1) and the restrictions for the piece type itself
+        Inherited by all of the pieces to evaluate each piece's respective criteria"""
+        return set(filter(lambda move: Queen.queen_criteria(x1, y1, move[0], move[1]), all_positions))
+
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
         self._worth = 9
+        self._legal_moves_list = {pos: Queen.queen_legal_moves(pos[0], pos[1]) for pos in all_positions}
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
@@ -213,6 +278,15 @@ class Queen(Piece):
             super().move(new_xpos, new_ypos)
         else:
             raise InvalidMoveError(new_xpos, new_ypos)
+
+    def legal_moves(self):
+        """Returns a set of legal moves for that piece based only on the restrictions for the piece type itself
+        Inherited by all of the pieces to evaluate each piece's respective criteria"""
+        return self._legal_moves_list[self.get_position()]
+
+    def can_move_to(self, new_xpos, new_ypos):
+        """Return true if piece can move to (new_xpos, new_ypos), false otherwise"""
+        return (new_xpos, new_ypos) in self._legal_moves_list[self.get_position()]
 
     def __str__(self):
         if self.get_color() == 1:
