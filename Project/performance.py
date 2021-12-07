@@ -22,11 +22,11 @@ def simulation(n, m1="random", m2="random", no_draws=True):
 
 
 # l = simulation(1)
-s1 = simulation(25, m1="random", m2='random')
-#s2 = simulation(9, m1="random", m2='medium')
+s1 = simulation(25, m1="random", m2='medium')
+# s2 = simulation(9, m1="random", m2='medium')
 
-#s3 = simulation(9, m1="basic", m2='random')
-#s4 = simulation(9, m1="medium", m2='random')
+# s3 = simulation(9, m1="basic", m2='random')
+# s4 = simulation(9, m1="medium", m2='random')
 
 
 print(s1[0])

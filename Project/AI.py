@@ -138,7 +138,7 @@ class AI:
             return None, self.scoring(board, maximizing_color)
 
         moves = self.format_legal_moves(board)
-        random.shuffle(moves)
+        # random.shuffle(moves)
         best_move = moves[0]
 
         min_or_max = maximizing_player * maximizing_color  # 1 if they are same (maximizing), -1 if they are different (minimizing)
@@ -151,7 +151,7 @@ class AI:
             if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
                 board.update_pieces(piece2, pos2x, pos2y, delete=True)
             board.get_board()[pos1y][pos1x], board.get_board()[pos2y][pos2x] = None, board.get_board()[pos1y][pos1x]
-            board._move_count += 1
+            board.update_move_count()
             board.switch_turn()
 
             # make a recursive call to minimax to find the best evaluation at a specified depth
@@ -163,13 +163,13 @@ class AI:
             if isinstance(piece2, Piece):  # add back piece to dict if necessary
                 board.update_pieces(piece2, pos2x, pos2y, adding=True)
             board.get_board()[pos1y][pos1x], board.get_board()[pos2y][pos2x] = board.get_board()[pos2y][pos2x], piece2
-            board._move_count -= 1
+            board.update_move_count(False)
 
             # update the best found move and score if necessary
             if min_or_max == 1:
                 if self.alpha == -999999999:
                     self.alpha = curr_eval
-                print('maximizing!!', min_or_max, curr_eval, "alpha: ", self.alpha, 'beta: ', self.beta, 'move: ', (self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])))
+                #print('maximizing!!', min_or_max, curr_eval, "alpha: ", self.alpha, 'beta: ', self.beta, 'move: ', (self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])))
                 if curr_eval > self.alpha:
                     self.alpha = curr_eval
                 if self.beta > self.alpha and self.beta != 999999999:
@@ -178,7 +178,7 @@ class AI:
             else:
                 if self.beta == 999999999:
                     self.beta = curr_eval
-                print('minimizing!!', min_or_max, curr_eval, "alpha: ", self.alpha, 'beta : ', self.beta,'move: ', (self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])))
+                #print('minimizing!!', min_or_max, curr_eval, "alpha: ", self.alpha, 'beta : ', self.beta,'move: ', (self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])))
                 if curr_eval < self.beta:
                     self.beta = curr_eval
                 if self.alpha < self.beta and self.alpha != -999999999:

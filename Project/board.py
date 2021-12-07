@@ -25,6 +25,9 @@ class Board:
     class InvalidPawnMove(Exception):
         pass
 
+    class InvalidMoveError(Exception):
+        pass
+
     def __init__(self):
         """
         board is 2d array of pieces and None objects. White is at the top, black is at the bottom so we can index the
@@ -148,6 +151,9 @@ class Board:
         pos1x, pos1y = pos1
         pos2x, pos2y = pos2
 
+        if pos2 not in self.legal_moves()[pos1]:
+            raise Board.InvalidMoveError("The move {pos} is not in the board legal moves list".format(pos=position1))
+
         if self.is_position_empty(pos1):  # Trying to move a piece at a position that has no piece
             raise Board.EmptySpaceError("The space at {pos} is empty".format(pos=position1))
         piece1 = self.get_piece_from_position(pos1)
@@ -170,14 +176,15 @@ class Board:
             if not (isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0)):  # regular move, makes sure a pawn doesn't have to be promoted
                 self.update_pieces(piece1, pos2x, pos2y)  # piece1.move(pos2x, pos2y)
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
-                self._move_count += 1
+                self.update_move_count()
             else:  # Pawn promotion implementation
                 # print("here")
+                self.update_pieces(piece1, pos2x, pos2y)  # used to make sure pawn can't promote on wrong side
                 self.update_pieces(piece1, pos2x, pos2y, delete=True)  # piece1.move(pos2x, pos2y)
                 piece1 = Queen(pos2x, pos2y, piece1.get_color())
                 self.update_pieces(piece1, pos2x, pos2y, adding=True)
                 self._board[pos1y][pos1x], self._board[pos2y][pos2x] = None, piece1
-                self._move_count += 1
+                self.update_move_count()
             self._moves_since_capture += 1  # for checking endgame
 
         else:  # if the place is not empty
@@ -188,7 +195,7 @@ class Board:
                                                 "not move diagonal".format(pos1=position1, pos2=position2))
                 self.update_pieces(piece1, pos2x, pos2y)  # piece1.move(pos2x, pos2y)  # moves individual piece object
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
-                self._move_count += 1
+                self.update_move_count()
                 self.update_pieces(piece2, pos2x, pos2y, delete=True)
                 self._captured.append(piece2)  # adds the captured piece to an array of captured pieces
                 if isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0):  # Pawn promotion after capture
@@ -360,6 +367,12 @@ class Board:
     def get_current_move_count(self) -> int:
         return self._move_count
 
+    def update_move_count(self, adding=True):
+        if adding:
+            self._move_count += 1
+        else:
+            self._move_count -= 1
+
     def __repr__(self):
         alphabet = ["A", "B", "C", "D", "E", "F", "G", "H"]
         string = " "
@@ -458,7 +471,7 @@ class Board:
                         pos2x, pos2y = piece2.get_position()
                         self.update_pieces(piece2, pos2x, pos2y, delete=True)
                     self._board[pos1y][pos1x], self._board[e[1]][e[0]] = None, self._board[pos1y][pos1x]
-                    self._move_count += 1
+                    self.update_move_count()
                     if not self.is_in_check(self.get_current_turn()):
                         possible_moves[piece1_position].append(e)
                     self.update_pieces(piece1, pos1x, pos1y, revert=True)  # piece1.revert(pos1x, pos1y)  # unmake the temporary move
@@ -466,7 +479,7 @@ class Board:
                         pos2x, pos2y = piece2.get_position()
                         self.update_pieces(piece2, pos2x, pos2y, adding=True)
                     self._board[pos1y][pos1x], self._board[e[1]][e[0]] = self._board[e[1]][e[0]], piece2
-                    self._move_count -= 1
+                    self.update_move_count(False)
 
         # if len(possible_moves) == 0:
         #    self._game_over = True
