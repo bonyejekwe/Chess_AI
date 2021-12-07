@@ -22,6 +22,7 @@ class Piece:
 
     # all_positions: a SINGLE list (of len() = 64) of all board positions to filter piece legal moves
     all_positions = [(i % 8, i // 8) for i in range(64)]  # [(0, 0), (1, 0), (2, 0), ...  (5, 7), (6, 7), (7, 7)]
+    all_legal_moves = all_legal_moves_dict
 
     def __init__(self, xpos, ypos, color: int):
         self._original_xpos = xpos
@@ -31,7 +32,6 @@ class Piece:
         self._color = color
         self._worth = 1
         self._was_moved = 1
-        self._all_legal_moves = all_legal_moves_dict
         self._name = 'piece'
 
     def get_color(self):
@@ -71,7 +71,7 @@ class Piece:
     def legal_moves(self):
         """Returns a list of legal moves for that piece based only on the restrictions for the piece type itself
         Inherited by all of the pieces to evaluate each piece's respective criteria"""
-        return self._all_legal_moves[(self._name, self.get_position())]
+        return Piece.all_legal_moves[(self._name, self.get_position())]
 
     def can_move_to(self, new_xpos, new_ypos):
         """Return true if piece can move to (new_xpos, new_ypos), false otherwise"""
@@ -249,23 +249,3 @@ class King(Piece):
             return "K"
         else:
             return "K'"
-
-
-def get_all_legal_moves():
-    """Function used to generate the meta dictionary for all legal moves for all positions of all pieces"""
-    white_pawn_moves = {pos: Pawn(pos[0], pos[1], 1).legal_moves() for pos in Piece.all_positions if pos[1] != 0}
-    black_pawn_moves = {pos: Pawn(pos[0], pos[1], -1).legal_moves() for pos in Piece.all_positions if pos[1] != 0}
-    knight_moves = {pos: Knight(pos[0], pos[1], 1).legal_moves() for pos in Piece.all_positions}
-    bishop_moves = {pos: Bishop(pos[0], pos[1], 1).legal_moves() for pos in Piece.all_positions}
-    rook_moves = {pos: Rook(pos[0], pos[1], 1).legal_moves() for pos in Piece.all_positions}
-    queen_moves = {pos: Queen(pos[0], pos[1], 1).legal_moves() for pos in Piece.all_positions}
-    king_moves = {pos: King(pos[0], pos[1], 1).legal_moves() for pos in Piece.all_positions}
-    piece_list = [('white_pawn', white_pawn_moves), ('black_pawn', black_pawn_moves), ('knight', knight_moves),
-                  ('bishop', bishop_moves), ('rook', rook_moves), ('queen', queen_moves), ('king', king_moves)]
-
-    legal_moves_dict = {}
-    for piece_name, piece_type in piece_list:
-        for pos in piece_type:
-            legal_moves_dict[(piece_name, pos)] = piece_type[pos]
-
-    return legal_moves_dict

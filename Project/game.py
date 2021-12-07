@@ -41,7 +41,6 @@ def turn(game, ai_game, ai_game2=False):  # effectively defaults to no AI for ga
         move(game, ai_game, ai_game2)
         game.switch_turn()
         print(f"Turn #: {game.get_current_move_count()}...")
-        # print(f"captured: {[str(p) for p in game.get_captured()]}")
     if game.is_game_over():
         return game.winner()
     else:
