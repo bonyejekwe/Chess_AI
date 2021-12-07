@@ -3,13 +3,13 @@ from pieces import *
 
 
 # Tests
-print('Piece Tests:')
-p1 = Piece(0, 0, 1)
-print(f"Color: {p1.get_color()}")
-print(f"Worth: {p1.get_worth()}")
-print(f"Position: {p1.get_position()}")
-p1.move(3, 4)
-print(F"Legal moves: {p1.legal_moves()}")
+# print('Piece Tests:')
+# p1 = Piece(0, 0, 1)
+# print(f"Color: {p1.get_color()}")
+# print(f"Worth: {p1.get_worth()}")
+# print(f"Position: {p1.get_position()}")
+# p1.move(3, 4)
+# print(F"Legal moves: {p1.legal_moves()}")
 
 
 print('\nRook Tests:')
