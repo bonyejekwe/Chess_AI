@@ -126,7 +126,7 @@ class Board:
 
 
         b[0][0] = King(0, 0, 1)
-        b[5][6] = Pawn(6,5,1)
+        b[3][6] = Pawn(6,3,-1)
         b[7][7] = King(7, 7, -1)
 
 
@@ -224,7 +224,8 @@ class Board:
     def pieces_in_the_way(self, pos1: tuple, pos2: tuple) -> list:
         """
         Finds the pieces in between where a piece is and where it wants to go. It ignores knights as knights can jump
-        over pieces
+        over pieces. The returned list contains a list of None and piece objects. The returned list does not include
+        position1, but it does include position 2.
         :param pos1: The initial position of the piece
         :param pos2: Where the piece wants to go
         :return: A list of all the pieces or empty spaces in between where a piece is and where it wants to go
@@ -404,10 +405,10 @@ class Board:
         # get the position of the corresponding king (from the dictionary of pieces left)
         # set consider to corresponding dictionary
         if c == 1:
-            pos = self._white_pieces[[p for p in self._white_pieces.keys() if isinstance(p, King)][0]]
+            pos = self.get_king_position(1)
             consider = self._black_pieces
         else:
-            pos = self._black_pieces[[p for p in self._black_pieces.keys() if isinstance(p, King)][0]]
+            pos = self.get_king_position(-1)
             consider = self._white_pieces
 
         try:
@@ -524,20 +525,16 @@ class Board:
             piece = self.get_piece_from_position(self._white_king_position)
             if isinstance(piece, King) and piece.get_color() == color:
                 return self._white_king_position
+            else:
+                return self._white_pieces[[p for p in self._white_pieces.keys() if isinstance(p, King)][0]]
         elif color == -1:
             piece = self.get_piece_from_position(self._black_king_position)
             if isinstance(piece, King) and piece.get_color() == color:
                 return self._black_king_position
-        for i in range(8):  # y positions
-            for j in range(8):  # x positions
-                piece = self.get_piece_from_position((j, i))
-                if isinstance(piece, King):
-                    if color == 1 and piece.get_color() == 1:
-                        self._white_king_position = (j, i)
-                        return self._white_king_position
-                    elif color == -1 and piece.get_color() == -1:
-                        self._black_king_position = (j, i)
-                        return self._black_king_position
+            else:
+                return self._black_pieces[[p for p in self._black_pieces.keys() if isinstance(p, King)][0]]
+
+
         # print(self.__repr__())
         raise Board.NoKing("In get_king_positions. No king found of color: {c}".format(c=color))
 
