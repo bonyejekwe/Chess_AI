@@ -186,9 +186,14 @@ class AI:
                     print('Time saved!!!! a<b')
                     break
 
-            if (curr_eval - m_eval) * min_or_max > 0:
-                m_eval = curr_eval
-                best_move = move
+            if min_or_max == 1:
+                if curr_eval > m_eval:
+                    m_eval = curr_eval
+                    best_move = move
+            else:
+                if curr_eval < m_eval:
+                    m_eval = curr_eval
+                    best_move = move
 
         # print(depth, best_move, m_eval)
         return best_move, m_eval
@@ -198,9 +203,9 @@ class AI:
         """Choose (make a weighted choice) a move for the AI to make and make the move """
         if self.mode == "medium":
             if self._team == 1:
-                start_pos, end_pos = self.minimax(board, 2, 1, 1)[0]  # minimax
+                start_pos, end_pos = self.minimax(board, 3, 1, 1)[0]  # minimax
             elif self._team == -1:
-                start_pos, end_pos = self.minimax(board, 2, 1, -1)[0]  # minimax
+                start_pos, end_pos = self.minimax(board, 3, 1, -1)[0]  # minimax
             self.alpha = -999999999
             self.beta = 999999999
         else:
