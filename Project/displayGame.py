@@ -121,6 +121,9 @@ class playGame:
         # While the exit button has not been pressed
         while not game_exit:
 
+            if self.game.is_game_over():
+                return self.game.winner()
+
             # Check the events
             for event in pygame.event.get():
                 # If the event is quitting the applicaiton, then do so
