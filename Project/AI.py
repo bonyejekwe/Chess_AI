@@ -135,6 +135,7 @@ class AI:
 
         # base case: depth = 0
         if depth == 0 or board.is_game_over():
+            board._game_over = False
             return None, self.scoring(board, maximizing_color)
 
         moves = self.format_legal_moves(board)
@@ -197,9 +198,9 @@ class AI:
         """Choose (make a weighted choice) a move for the AI to make and make the move """
         if self.mode == "medium":
             if self._team == 1:
-                start_pos, end_pos = self.minimax(board, 3, 1, 1)[0]  # minimax
+                start_pos, end_pos = self.minimax(board, 2, 1, 1)[0]  # minimax
             elif self._team == -1:
-                start_pos, end_pos = self.minimax(board, 3, 1, -1)[0]  # minimax
+                start_pos, end_pos = self.minimax(board, 2, 1, -1)[0]  # minimax
             self.alpha = -999999999
             self.beta = 999999999
         else:
