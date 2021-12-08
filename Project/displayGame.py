@@ -123,6 +123,9 @@ class playGame :
         # While the exit button has not been pressed
         while not game_exit:
 
+            if self.game.is_game_over():
+                return self.game.winner()
+
             # Check the events
             for event in pygame.event.get():
                 # If the event is quitting the applicaiton, then do so
@@ -182,7 +185,6 @@ class playGame :
                             
                         # Check if the game is over
                         if self.game.is_game_over():
-                            
                             return self.game.winner()  
 
                     elif piece_to_move_chosen == True and (x == chosen_piece[0] and y == chosen_piece[1]):
@@ -233,6 +235,7 @@ class playGame :
                     
                 # Switch the turn
                 self.game.switch_turn()
+
         
         # Quit pygame
         pygame.quit()

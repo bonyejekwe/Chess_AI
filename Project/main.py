@@ -14,10 +14,12 @@ def loop(bd):
 def main():
     b = Board()
     b._start_test_game()
-    print(b.get_current_turn())
-    print(b.is_in_check(b.get_current_turn()))
     print(b)
     print(b.legal_moves())
+    b.switch_turn()
+    print(b.legal_moves())
+    b.move_piece(('H',8),('H',7))
+    print(b)
 
 
 

@@ -121,21 +121,29 @@ class Board:
         """
         Starts a game for testing piece movement and game logic
         """
+
         b = [[None for _ in range(8)] for _ in range(8)]
 
-        b[5][5] = King(5, 5, -1)
-        b[7][7] = King(7, 7, 1)
-        #
-        b[6][6] = Queen(6, 6, -1)
-        # b[1][3] = Pawn(3, 1, 1)
-        # b[2][4] = Pawn(4, 2, -1)
-        # b[3][5] = Pawn(5, 3, -1)
-        # #b[3][3] = Rook(3, 3, -1)
-        # b[7][5] = Pawn(5, 7, 1)
-        # b[5][4] = Pawn(4, 5, 1)
 
+        b[0][0] = King(0, 0, 1)
+        b[5][6] = Pawn(6,5,1)
+        b[7][7] = King(7, 7, -1)
+
+
+
+        self._turn = 1  # sets the turn to white
+        self._moves_since_capture = 0
+        self._move_count = 0
+        self._game_over = False
         self._board = b
-        self._turn = 1
+        for i in range(0, 8):
+            for j in range(0, 8):
+                if isinstance(self._board[i][j], Piece):
+                    if self._board[i][j].get_color() == 1:
+                        self._white_pieces[self._board[i][j]] = self._board[i][j].get_position()
+                    elif self._board[i][j].get_color() == -1:
+                        self._black_pieces[self._board[i][j]] = self._board[i][j].get_position()
+
 
     @Profiler.profile
     def move_piece(self, position1: tuple, position2: tuple) -> Union[Piece, None]:
@@ -152,7 +160,7 @@ class Board:
         pos2x, pos2y = pos2
 
         if pos2 not in self.legal_moves()[pos1]:
-            raise Board.InvalidMoveError("The move {pos} is not in the board legal moves list".format(pos=position1))
+            raise Board.InvalidMoveError("The move from {pos1} to {pos2} is not in the board legal moves list".format(pos1=position1, pos2 = position2))
 
         if self.is_position_empty(pos1):  # Trying to move a piece at a position that has no piece
             raise Board.EmptySpaceError("The space at {pos} is empty".format(pos=position1))
@@ -535,19 +543,19 @@ class Board:
 
     def is_game_over(self):
         if len(self.legal_moves()) == 0:
-            print(f'game over')
+            print('game over')
             self._game_over = True
         elif self._moves_since_capture > 49:
-            print(f'draw (50 move rule)')
+            print('draw (50 move rule)')
             self._game_over = True
         return self._game_over
 
     def winner(self):
         if len(self.legal_moves()) == 0 and self.is_in_check(self._turn):
-            print(f'checkmate')
+            print('checkmate')
             return self.get_current_turn() * -1
         elif len(self.legal_moves()) == 0:
-            print(f'stalemate')
+            print('stalemate')
             return 2 * self.get_current_turn()
         else:
             return 0
