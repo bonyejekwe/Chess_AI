@@ -186,9 +186,14 @@ class AI:
                     print('Time saved!!!! a<b')
                     break
 
-            if (curr_eval - m_eval) * min_or_max > 0:
-                m_eval = curr_eval
-                best_move = move
+            if min_or_max == 1:
+                if curr_eval > m_eval:
+                    m_eval = curr_eval
+                    best_move = move
+            else:
+                if curr_eval < m_eval:
+                    m_eval = curr_eval
+                    best_move = move
 
         # print(depth, best_move, m_eval)
         return best_move, m_eval
