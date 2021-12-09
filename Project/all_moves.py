@@ -1,4 +1,5 @@
-# meta dictionary storing all the information about all moves from all positions for each piece
+
+# all_moves.py: meta dictionary storing all the information about all moves from all positions for each piece
 # {key=(piece_name, position), value=[list of possible moves from that position
 
 all_legal_moves_dict = {('bishop', (0, 0)): {(4, 4), (5, 5), (7, 7), (1, 1), (3, 3), (2, 2), (6, 6)},

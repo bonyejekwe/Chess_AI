@@ -1,8 +1,9 @@
 
-# TODO README!!!!
+# game.py: play a player vs AI or an AI vs AI chess match
+
 #  Currently each game is capped to take less than 200 moves and any game taking longer is listed as a timeout.
-#  NOTE: this can be changed, but game code for performance.py: 1= white checkmate win, -1=black checkmate win, 2=white
-#  stalemated (black can't move), -2=black stalemated (white can't move), 0=draw?, -5=timeout (over 200 moves)
+#  NOTE: the game code for performance.py: 1 = white checkmate win, -1 = black checkmate win, 2 = white
+#  stalemated (black can't move), -2 = black stalemated (white can't move), 0 = draw, -5 = timeout (over 200 moves)
 
 from board import Board
 from AI import AI
@@ -17,9 +18,10 @@ def main():
         Profiler.report()
     print("Winners", winners)
 
+
 @Profiler.profile
 def run_game(num=2, mode1="random", mode2="random"):
-    """Run game using num of AI's (1=player vs AI, 2=AI vs AI). Defaults to AI vs AI"""
+    """Start a game using num of AI's (1=player vs AI, 2=AI vs AI). Defaults to AI vs AI"""
     game = Board()
     if num == 1:  # player against ai
         side = int(input("Select side you would like to play on (1 for white, -1 for black): "))
@@ -34,8 +36,10 @@ def run_game(num=2, mode1="random", mode2="random"):
     print("the winner is...", game_winner)
     return game_winner
 
+
 @Profiler.profile
-def turn(game, ai_game, ai_game2=False):  # effectively defaults to no AI for game
+def turn(game, ai_game, ai_game2=False):  # defaults to no AI for game
+    """Run the actual game"""
     timed_out = -5
     while game.is_game_over() is False and game.get_current_move_count() < 200:
         move(game, ai_game, ai_game2)
@@ -49,6 +53,7 @@ def turn(game, ai_game, ai_game2=False):  # effectively defaults to no AI for ga
 
 
 def move(game: Board, game_ai: AI, game_ai2=False):
+    """Complete a move, either from a user or the AI"""
     if game.get_current_turn() == 1:
         print("White's turn.")
         mv_string = "Location of piece, ie A2: "

@@ -1,6 +1,5 @@
+
 # pieces.py:  defines classes for each chess piece type
-# TODO: figure out how capturing is going to work with the pawn
-# TODO: figure out how en-passant and castling (if time permits)
 
 from profiler import Profiler
 from all_moves import all_legal_moves_dict
@@ -51,11 +50,13 @@ class Piece:
         return self._worth
 
     def get_was_moved(self):
-        """:return whether the piece was moved or not"""
-        if self._ypos == self.get_color():  # checks if the white pawn has moved from its starting position
+        """
+        Check if the piece was moved from the piece
+        :return whether the piece was moved or not
+        """
+        if self._ypos == self.get_color():  # checks for the white pawn
             return False
-        if self._ypos == -6 * self.get_color():  # checks if the black pawn has moved from its starting position
-            # since black color is -1, and its starting y position if 6, if you multiple -1 by -6 it will = start y pos
+        if self._ypos == -6 * self.get_color():  # checks for the black pawn
             return False
         return True
 
@@ -66,7 +67,7 @@ class Piece:
         return ((0 <= x <= 7) and (0 <= y <= 7)) and not (x == self._xpos and y == self._ypos)
 
     def move(self, new_xpos, new_ypos):
-        """:return move the piece"""
+        """Move the piece and decrement the was moved variable"""
         if (0 <= new_xpos <= 7) and (0 <= new_ypos <= 7):
             self._xpos = new_xpos
             self._ypos = new_ypos
@@ -84,13 +85,15 @@ class Piece:
         """Return true if piece can move to (new_xpos, new_ypos), false otherwise"""
         return (new_xpos, new_ypos) in self.legal_moves()
 
-    def revert(self, new_xpos, new_ypos):
-        self._xpos = new_xpos
-        self._ypos = new_ypos
+    def revert(self, last_xpos, last_ypos):
+        """revert a piece back to its previous position (new_xpos, new_ypos). Decrement the was_moved variable"""
+        self._xpos = last_xpos
+        self._ypos = last_ypos
         self._was_moved += 1
 
 
 class Pawn(Piece):
+
     """The movement according on color is based on: "white" = 1, "black" = -1 for simplicity"""
 
     def __init__(self, xpos, ypos, color):
@@ -107,9 +110,14 @@ class Pawn(Piece):
         return (not Pawn.get_was_moved(self)) and (new_ypos - self._ypos == 2 * self._color)
 
     def is_capturing(self):
+        """:return true if the pawn is capturing"""
         return self._is_capturing
 
     def set_capturing(self, status):
+        """
+        Set the capturing variable for the pawn object
+        :param status determines whether the pawn is currently capturing or not
+        """
         self._is_capturing = status  # True or False
 
     def criteria(self, x, y):

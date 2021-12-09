@@ -1,8 +1,9 @@
-# profiler.py: A simple profiling class
-# Professor Rachlin's profiling decorator.
+
+# profiler.py: A simple profiling class (Professor Rachlin's profiling decorator).
 
 from collections import defaultdict
 import time
+
 
 class Profiler:
 
@@ -28,7 +29,6 @@ class Profiler:
             return val
 
         return wrapper
-
 
     @staticmethod
     def report():

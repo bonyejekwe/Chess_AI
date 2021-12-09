@@ -1,3 +1,4 @@
+
 # board.py: defines the board object
 
 from pieces import *
@@ -140,13 +141,10 @@ class Board:
 
         b = [[None for _ in range(8)] for _ in range(8)]
 
-
         b[0][0] = King(0, 0, 1)
-        b[5][6] = Pawn(6,5,1)
-        b[7][0] = Bishop(0,7,-1)
+        b[5][6] = Pawn(6, 5, 1)
+        b[7][0] = Bishop(0, 7, -1)
         b[7][7] = King(7, 7, -1)
-
-
 
         self._turn = 1  # sets the turn to white
         self._moves_since_capture = 0
@@ -160,7 +158,6 @@ class Board:
                         self._white_pieces[self._board[i][j]] = self._board[i][j].get_position()
                     elif self._board[i][j].get_color() == -1:
                         self._black_pieces[self._board[i][j]] = self._board[i][j].get_position()
-
 
     @Profiler.profile
     def move_piece(self, position1: tuple, position2: tuple) -> Union[Piece, None]:
@@ -177,7 +174,8 @@ class Board:
         pos2x, pos2y = pos2
 
         if pos2 not in self.legal_moves()[pos1]:
-            raise Board.InvalidMoveError("The move from {pos1} to {pos2} is not in the board legal moves list".format(pos1=position1, pos2 = position2))
+            raise Board.InvalidMoveError("The move from {pos1} to {pos2} is not in the board legal moves list".format(
+                pos1=position1, pos2=position2))
 
         if self.is_position_empty(pos1):  # Trying to move a piece at a position that has no piece
             raise Board.EmptySpaceError("The space at {pos} is empty".format(pos=position1))
@@ -203,7 +201,6 @@ class Board:
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
                 self.update_move_count()
             else:  # Pawn promotion implementation
-                # print("here")
                 self.update_pieces(piece1, pos2x, pos2y)  # used to make sure pawn can't promote on wrong side
                 self.update_pieces(piece1, pos2x, pos2y, delete=True)  # piece1.move(pos2x, pos2y)
                 piece1 = Queen(pos2x, pos2y, piece1.get_color())
@@ -253,16 +250,16 @@ class Board:
         in_the_way = []
         # Checks to see if there are any pieces blocking each other
         if not isinstance(piece1, Knight):  # Knight can jump over pieces so it doesn't matter
-            difx = pos2x - pos1x  # difference in y
-            dify = pos2y - pos1y  # difference in x
+            dx = pos2x - pos1x  # difference in y
+            dy = pos2y - pos1y  # difference in x
 
             # Case where the piece moved only in the y direction
-            if difx == 0:  # can assume dify != 0 as validate_turn_color will have thrown an error
+            if dx == 0:  # can assume dy != 0 as validate_turn_color will have thrown an error
                 for i in range(min(pos1y, pos2y) + 1, max(pos1y, pos2y)):
                     in_the_way.append(self._board[i][pos2x])
 
             # Case where the piece only moved in the x direction
-            elif dify == 0:  # can assume difx != 0 as validate_turn_color will have thrown an error
+            elif dy == 0:  # can assume dx != 0 as validate_turn_color will have thrown an error
                 in_the_way = self._board[pos2y][min(pos1x, pos2x) + 1:max(pos1x, pos2x)]
 
             # Case where the piece moved diagonally
@@ -440,20 +437,18 @@ class Board:
         except NameError:
             raise Board.NoKing(f'In is in check. {c} has no king.')
 
-        checks = []
-
         for p in consider.keys():
             pos2 = p.get_position()
             if isinstance(p, Pawn):
-                if (pos2[0] + 1 == pos[0] or pos2[0] - 1 == pos[0]) and pos2[1] + p.get_color() == pos[1]:  # checks if the king is diagonal to the pawn
+                # checks if the king is diagonal to the pawn
+                if (pos2[0] + 1 == pos[0] or pos2[0] - 1 == pos[0]) and pos2[1] + p.get_color() == pos[1]:
                     return True
-                    # checks.append(pos2)
+
             else:
-                if p.can_move_to(pos[0], pos[1]) and (isinstance(p, Knight) or (not self.is_piece_in_the_way(pos2, pos))):
+                if p.can_move_to(pos[0], pos[1]) and (not self.is_piece_in_the_way(pos2, pos)):
                     return True
-                    # checks.append(pos2)
+
         return False
-        # return len(checks) != 0
 
     @staticmethod
     def _is_white(piece: Piece) -> bool:
@@ -499,7 +494,7 @@ class Board:
                         continue
                     if isinstance(piece2, King):  # don't add moves that capture the king
                         continue
-                    self.update_pieces(piece1, e[0], e[1])  # piece1.move(e[0], e[1])  # temporarily make the move
+                    self.update_pieces(piece1, e[0], e[1])  # temporarily make the move
                     if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
                         pos2x, pos2y = piece2.get_position()
                         self.update_pieces(piece2, pos2x, pos2y, delete=True)
@@ -507,7 +502,7 @@ class Board:
                     self.update_move_count()
                     if not self.is_in_check(self.get_current_turn()):
                         possible_moves[piece1_position].append(e)
-                    self.update_pieces(piece1, pos1x, pos1y, revert=True)  # piece1.revert(pos1x, pos1y)  # unmake the temporary move
+                    self.update_pieces(piece1, pos1x, pos1y, revert=True)  # unmake the temporary move
                     if isinstance(piece2, Piece):  # add back piece to dict if necessary
                         pos2x, pos2y = piece2.get_position()
                         self.update_pieces(piece2, pos2x, pos2y, adding=True)
@@ -558,8 +553,6 @@ class Board:
             else:
                 return self._black_pieces[[p for p in self._black_pieces.keys() if isinstance(p, King)][0]]
 
-
-        # print(self.__repr__())
         raise Board.NoKing("In get_king_positions. No king found of color: {c}".format(c=color))
 
     def is_game_over(self):

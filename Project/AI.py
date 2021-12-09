@@ -1,14 +1,8 @@
 
-# TODO IDEAS:
-#  *implement a way to determine if a piece is in danger (possibly through piece or board class).
+# AI.py: our chess AI
+
 #  -"basic" just favors capturing pieces of equal or lesser value, and favors not moving the king (need add more)
 #  -"medium" is minimax implemented (w/ alpha beta pruning), using AI scoring criteria
-
-# TODO: The AI should retrieve all the information about its pieces to use (ie. every piece's position/color/worth/
-#  in_danger status/etc).
-
-# TODO: in future mode, potentially add hardcode common chess openings/chess endings
-
 
 import random
 from pieces import *
@@ -22,7 +16,7 @@ class AI:
     def __init__(self, color: int, mode: str):
         self._team = color
         self._legal_moves = []
-        self.mode = mode  # "random", "basic", "medium", "advance"
+        self.mode = mode  # "random" or "medium",
         self.alpha = -999999999
         self.beta = 999999999
 
@@ -56,7 +50,6 @@ class AI:
         score += (white - black)
         white_score = 0
         black_score = 0
-        # TODO Update worth/use of each criteria wrt time (opening, endgame, etc.), possibly move to evaluation class
 
         # pawn development: increase score if pawns are moving up the board
         white_score += sum([5 * (p.get_position()[1] - 1) for p in white_pieces_left if isinstance(p, Pawn)]) / num_moves
@@ -66,8 +59,7 @@ class AI:
         white_score += sum([80 - (10 * (p.get_position()[1] - p.original_position()[1])) for p in white_pieces_left if isinstance(p, King)])
         # general piece development: increase weight if pieces have many options to move
         white_score += 15 * sum([len(p.legal_moves()) for p in white_pieces_left if not isinstance(p, Pawn)])
-#
-        # black
+
         # pawn development: increase score if pawns are moving up the board
         black_score += sum([5 * (6 - p.get_position()[1]) for p in black_pieces_left if isinstance(p, Pawn)]) / num_moves
         # knight development: increase score if pawns are moving up the board
@@ -109,7 +101,6 @@ class AI:
         """
         return chr(position[0] + 65), position[1] + 1  # a tuple
 
-    # TODO need to make scoring more complex as many board positions will have the same score currently
     @Profiler.profile
     def minimax(self, board: Board, depth:int, maximizing_player:int, maximizing_color:int):
         """Implement minimax algorithm: the best move for the maximizing color looking ahead depth moves on the board
@@ -125,7 +116,6 @@ class AI:
             return None, self.scoring(board, maximizing_color)
 
         moves = self.format_legal_moves(board)
-        # random.shuffle(moves)
         best_move = moves[0]
 
         min_or_max = maximizing_player * maximizing_color  # 1 if they are same (maximizing), -1 if they are different (minimizing)
@@ -156,7 +146,6 @@ class AI:
             if min_or_max == 1:
                 if self.alpha == -999999999:
                     self.alpha = curr_eval
-                #print('maximizing!!', min_or_max, curr_eval, "alpha: ", self.alpha, 'beta: ', self.beta, 'move: ', (self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])))
                 if curr_eval > self.alpha:
                     self.alpha = curr_eval
                 if self.beta > self.alpha and self.beta != 999999999:
@@ -165,11 +154,9 @@ class AI:
             else:
                 if self.beta == 999999999:
                     self.beta = curr_eval
-                #print('minimizing!!', min_or_max, curr_eval, "alpha: ", self.alpha, 'beta : ', self.beta,'move: ', (self.num_pos_to_letter_pos(move[0]), self.num_pos_to_letter_pos(move[1])))
                 if curr_eval < self.beta:
                     self.beta = curr_eval
                 if self.alpha < self.beta and self.alpha != -999999999:
-                    #print('Time saved!!!! a<b')
                     break
 
             if min_or_max == 1:
@@ -181,7 +168,6 @@ class AI:
                     m_eval = curr_eval
                     best_move = move
 
-        # print(depth, best_move, m_eval)
         return best_move, m_eval
 
     @Profiler.profile

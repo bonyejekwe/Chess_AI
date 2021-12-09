@@ -1,7 +1,5 @@
-# TODO README!!!!
-#  Currently each game is capped to take less than 200 moves and any game taking longer is listed as a timeout.
-#  NOTE: this can be changed, but game code for performance.py: 1= white checkmate win, -1=black checkmate win, 2=white
-#  stalemated (black can't move), -2=black stalemated (white can't move), 0=draw?, -5=timeout (over 200 moves)
+
+# displayGame.py: a graphical user interface (GUI) for our chess AI
 
 from board import Board
 from AI import AI
@@ -10,10 +8,9 @@ from pieces import *
 import pygame
 
 
-# Class for playing the game
 class PlayGame:
 
-    def __init__(self, start_on_creation=False, AI_mode='medium'):
+    def __init__(self, start_on_creation=False, ai_mode='medium'):
         """Initializes the variable, and starts the game automatically if desired"""
 
         # Set the constant variables ( stored as instance variables in case they become changeable in the future)
@@ -42,7 +39,7 @@ class PlayGame:
                 'black', self.pos_pieces[i])), (100, 100)) for i in range(len(self.pos_pieces))}
 
         if start_on_creation:
-            self.start_game(AI_mode)
+            self.start_game(ai_mode)
 
     def start_game(self, AI_mode='medium'):
         """Starts the game and draws the board"""
