@@ -35,18 +35,23 @@ class Piece:
         self._name = 'piece'
 
     def get_color(self):
+        """:return the color of the piece"""
         return self._color  # if self._color == 1: # return "white" # else: # return "black"
 
     def original_position(self):
+        """:return the original position of the piece"""
         return self._original_xpos, self._original_ypos
 
     def get_position(self):
+        """:return the current position of the piece"""
         return self._xpos, self._ypos
 
     def get_worth(self):
+        """:return the worth of the piece"""
         return self._worth
 
     def get_was_moved(self):
+        """:return whether the piece was moved or not"""
         if self._ypos == self.get_color():  # checks if the white pawn has moved from its starting position
             return False
         if self._ypos == -6 * self.get_color():  # checks if the black pawn has moved from its starting position
@@ -55,11 +60,13 @@ class Piece:
         return True
 
     def criteria(self, x, y):
-        """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
-        Here: true if new x, y are both on the board and not the same as the old x, y"""
+        """Check whether a move to (x, y) fulfills the criteria for specific piece based on current position and piece
+         itself. Return true if new x, y are both on the board and not the same as the old x, y
+        :return bool for whether move fulfills criteria"""
         return ((0 <= x <= 7) and (0 <= y <= 7)) and not (x == self._xpos and y == self._ypos)
 
     def move(self, new_xpos, new_ypos):
+        """:return move the piece"""
         if (0 <= new_xpos <= 7) and (0 <= new_ypos <= 7):
             self._xpos = new_xpos
             self._ypos = new_ypos
@@ -112,6 +119,7 @@ class Pawn(Piece):
                                             (Pawn.first_move(self, y) and (x-self._xpos == 0))))
 
     def move(self, new_xpos, new_ypos):
+        """:return move the piece"""
         if self.criteria(new_xpos, new_ypos):
             super().move(new_xpos, new_ypos)
         else:
@@ -138,6 +146,7 @@ class Knight(Piece):
                                             (abs(x - self._xpos) == 2 and abs(y - self._ypos) == 1)))
 
     def move(self, new_xpos, new_ypos):
+        """:return move the piece"""
         if self.criteria(new_xpos, new_ypos):
             super().move(new_xpos, new_ypos)
         else:
@@ -163,6 +172,7 @@ class Bishop(Piece):
         return super().criteria(x, y) and (abs(x - self._xpos) == abs(y - self._ypos))
 
     def move(self, new_xpos, new_ypos):
+        """:return move the piece"""
         if self.criteria(new_xpos, new_ypos):
             super().move(new_xpos, new_ypos)
         else:
@@ -188,6 +198,7 @@ class Rook(Piece):
         return super().criteria(x, y) and ((x - self._xpos) * (y - self._ypos) == 0)
 
     def move(self, new_xpos, new_ypos):
+        """:return move the piece"""
         if self.criteria(new_xpos, new_ypos):
             super().move(new_xpos, new_ypos)
         else:
@@ -214,6 +225,7 @@ class Queen(Piece):
             (x - self._xpos) * (y - self._ypos) == 0 or (abs(x - self._xpos) == abs(y - self._ypos))
 
     def move(self, new_xpos, new_ypos):
+        """:return move the piece"""
         if self.criteria(new_xpos, new_ypos):
             super().move(new_xpos, new_ypos)
         else:
@@ -239,6 +251,7 @@ class King(Piece):
         return super().criteria(x, y) and (abs(x - self._xpos) <= 1) and (abs(y - self._ypos) <= 1)
 
     def move(self, new_xpos, new_ypos):
+        """:return move the piece"""
         if self.criteria(new_xpos, new_ypos):
             super().move(new_xpos, new_ypos)
         else:
@@ -249,23 +262,3 @@ class King(Piece):
             return "K"
         else:
             return "K'"
-
-
-def get_all_legal_moves():
-    """Function used to generate the meta dictionary for all legal moves for all positions of all pieces"""
-    white_pawn_moves = {pos: Pawn(pos[0], pos[1], 1).legal_moves() for pos in Piece.all_positions if pos[1] != 0}
-    black_pawn_moves = {pos: Pawn(pos[0], pos[1], -1).legal_moves() for pos in Piece.all_positions if pos[1] != 0}
-    knight_moves = {pos: Knight(pos[0], pos[1], 1).legal_moves() for pos in Piece.all_positions}
-    bishop_moves = {pos: Bishop(pos[0], pos[1], 1).legal_moves() for pos in Piece.all_positions}
-    rook_moves = {pos: Rook(pos[0], pos[1], 1).legal_moves() for pos in Piece.all_positions}
-    queen_moves = {pos: Queen(pos[0], pos[1], 1).legal_moves() for pos in Piece.all_positions}
-    king_moves = {pos: King(pos[0], pos[1], 1).legal_moves() for pos in Piece.all_positions}
-    piece_list = [('white_pawn', white_pawn_moves), ('black_pawn', black_pawn_moves), ('knight', knight_moves),
-                  ('bishop', bishop_moves), ('rook', rook_moves), ('queen', queen_moves), ('king', king_moves)]
-
-    legal_moves_dict = {}
-    for piece_name, piece_type in piece_list:
-        for pos in piece_type:
-            legal_moves_dict[(piece_name, pos)] = piece_type[pos]
-
-    return legal_moves_dict

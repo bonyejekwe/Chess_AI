@@ -11,12 +11,12 @@ import pygame
 
 
 # Class for playing the game
-class playGame:
+class PlayGame:
 
     def __init__(self, start_on_creation=False, AI_mode='medium'):
-        ''' Initializes the variable, and starts the game automatically if desired'''
+        """Initializes the variable, and starts the game automatically if desired"""
 
-        # Set the constant variables ( stored as instance variables in case they become changable in the future)
+        # Set the constant variables ( stored as instance variables in case they become changeable in the future)
         self.white, self.black = (240, 217, 181), (181, 136, 99)
 
         # Set the chosen color
@@ -24,6 +24,7 @@ class playGame:
 
         # Define the width, height, and cell size
         self.width, self.height = 800, 800
+
         # Define the cell size
         self.cell_size = self.width / 8.0
 
@@ -32,19 +33,19 @@ class playGame:
 
         # Get the piece images
         self.white_pieces = {
-            self.pos_pieces[i]: pygame.transform.scale(pygame.image.load(r'Piece Images/{}/{}.png'.format( \
+            self.pos_pieces[i]: pygame.transform.scale(pygame.image.load(r'Piece Images/{}/{}.png'.format(
                 'white', self.pos_pieces[i])), (100, 100)) for i in range(len(self.pos_pieces))}
 
         # Get the piece images
         self.black_pieces = {
-            self.pos_pieces[i]: pygame.transform.scale(pygame.image.load(r'Piece Images/{}/{}.png'.format( \
+            self.pos_pieces[i]: pygame.transform.scale(pygame.image.load(r'Piece Images/{}/{}.png'.format(
                 'black', self.pos_pieces[i])), (100, 100)) for i in range(len(self.pos_pieces))}
 
-        if start_on_creation == True:
+        if start_on_creation:
             self.start_game(AI_mode)
 
     def start_game(self, AI_mode='medium'):
-        ''' Starts the game and draws the board '''
+        """Starts the game and draws the board"""
 
         # Get the game result
         result = self.run_game(AI_mode)
@@ -53,7 +54,7 @@ class playGame:
         print('The winner is: {} !!!'.format(result))
 
     def initialize_board(self):
-        ''' Draws the board to begin with and sets important instance variables'''
+        """Draws the board to begin with and sets important instance variables"""
         # set caption
         pygame.display.set_caption("Chess Board")
 
@@ -67,7 +68,6 @@ class playGame:
         for x in range(0, 8):
             # Loop through the y-axis
             for y in range(0, 8):
-                # If the
                 if (x + y) % 2 == 1:
                     pygame.draw.rect(self.board, self.black,
                                      (x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size))
@@ -79,7 +79,6 @@ class playGame:
 
         # Get the side from the player
         self.side = int(input("Select side you would like to play on (1 for white, -1 for black): "))
-        # self.side = 1
 
         # Set the ai's side
         ai_team = -1 * self.side
@@ -98,11 +97,11 @@ class playGame:
         return game_winner
 
     def master_function(self, game_ai):  # effectively defaults to no AI for game
-        ''' The graphics master function '''
+        """The graphics master function"""
         # Define a dictionary of letters to map
         letters_map = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G', 7: 'H'}
 
-        # Definte the game exit variable
+        # Define the game exit variable
         game_exit = False
 
         # set display
@@ -126,7 +125,7 @@ class playGame:
 
             # Check the events
             for event in pygame.event.get():
-                # If the event is quitting the applicaiton, then do so
+                # If the event is quitting the application, then do so
                 if event.type == pygame.QUIT:
                     game_exit = True
 
@@ -141,7 +140,7 @@ class playGame:
                     # print(x, y)
 
                     # If this is the first piece we have chosen and it is a piece of our color
-                    if piece_to_move_chosen == False and isinstance(self.game.get_board()[y][x], Piece) == True and \
+                    if (not piece_to_move_chosen) and isinstance(self.game.get_board()[y][x], Piece) and \
                             self.game.get_board()[y][x].get_color() == self.side:
 
                         # Change the background color of the cell
@@ -155,16 +154,15 @@ class playGame:
                         chosen_piece = [x, y]
 
                     # Check if a piece has been chosen and the selected tile does not match the chosen piece tile
-                    elif piece_to_move_chosen == True and (x != chosen_piece[0] or y != chosen_piece[1]):
+                    elif piece_to_move_chosen and (x != chosen_piece[0] or y != chosen_piece[1]):
 
-                        ## Check that the move was valid using game code ##
+                        # Check that the move was valid using game code
                         try:
                             self.game.move_piece(tuple([letters_map[chosen_piece[0]], 1 + chosen_piece[1]]),
                                                  tuple([letters_map[x], 1 + y]))
-                            # print("move successful")
+
                         except:  # This is far too general, but it is also not nearly finished
-                            # print('Redo move.')
-                            # Exit out of current loop itteration
+                            # Exit out of current loop iteration
                             continue
 
                         # Find out which color should be used
@@ -188,7 +186,7 @@ class playGame:
                         if self.game.is_game_over():
                             return self.game.winner()
 
-                    elif piece_to_move_chosen == True and (x == chosen_piece[0] and y == chosen_piece[1]):
+                    elif piece_to_move_chosen and (x == chosen_piece[0] and y == chosen_piece[1]):
                         # Find out which color should be used
                         if (chosen_piece[0] + (7 - chosen_piece[1])) % 2 == 1:
                             overwrite_color = self.black
@@ -243,7 +241,7 @@ class playGame:
         pygame.quit()
 
     def draw_pieces(self, gameDisplay):
-        ''' Blitzes the pieces onto the board'''
+        """Blitzes the pieces onto the board"""
         # Get the board
         brd = self.game.get_board()
 
@@ -254,7 +252,7 @@ class playGame:
             for x in range(len(brd[y])):
 
                 # Check that the element is a piece
-                if isinstance(brd[x][y], Piece) == True:
+                if isinstance(brd[x][y], Piece):
 
                     # Find the piece type
                     piece_type = str(brd[x][y])[0]
@@ -265,15 +263,15 @@ class playGame:
                     # Draw the respective piece
                     if piece_color == 1:
                         gameDisplay.blit(self.white_pieces[piece_type],
-                                         (self.cell_size * (y), self.cell_size * (7 - x)))
+                                         (self.cell_size * y, self.cell_size * (7 - x)))
 
                     elif piece_color == -1:
                         gameDisplay.blit(self.black_pieces[piece_type],
-                                         (self.cell_size * (y), self.cell_size * (7 - x)))
+                                         (self.cell_size * y, self.cell_size * (7 - x)))
 
 
 def main():
-    playGame(True)
+    PlayGame(True)
 
 
 if __name__ == "__main__":
