@@ -203,9 +203,9 @@ class AI:
         """Choose (make a weighted choice) a move for the AI to make and make the move """
         if self.mode == "medium":
             if self._team == 1:
-                start_pos, end_pos = self.minimax(board, 1, 1, 1)[0]  # minimax
+                start_pos, end_pos = self.minimax(board, 3, 1, 1)[0]  # minimax
             elif self._team == -1:
-                start_pos, end_pos = self.minimax(board, 1, 1, -1)[0]  # minimax
+                start_pos, end_pos = self.minimax(board, 3, 1, -1)[0]  # minimax
             self.alpha = -999999999
             self.beta = 999999999
         else:

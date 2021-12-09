@@ -81,15 +81,30 @@ class Board:
                     elif self._board[i][j].get_color() == -1:
                         self._black_pieces[self._board[i][j]] = self._board[i][j].get_position()
 
-    def get_pieces_left(self, color):
+    def get_pieces_left(self, color: int) -> dict:
+        """
+        Will get all of the pieces still on the board as well as their locations of a given color
+        :param color: color you would like to get the pieces of
+        :return: A dictionary of all of the pieces of a certain color, the key is the piece object and value is a
+        position as a tuple
+        """
         if color == 1:
             return self._white_pieces
         elif color == -1:
             return self._black_pieces
 
     @Profiler.profile
-    def update_pieces(self, piece, xpos, ypos, revert=False, delete=False, adding=False):
-        """Updates the dictionaries every time a piece is moved"""
+    def update_pieces(self, piece: Piece, xpos: int, ypos: int, revert=False, delete=False, adding=False):
+        """
+        Updates the dictionaries every time a piece is moved
+        :param piece: The piece you would like to update
+        :param xpos: The x position of the place you are moving the piece to
+        :param ypos: The y position of the place you are moving the piece to
+        :param revert: True if you would like to revert a move
+        :param delete: True if you would like to delete a piece
+        :param adding: True if you would like to add a piece to the colors piece dictionary
+        """
+
         if adding:
             if piece.get_color() == 1:
                 self._white_pieces[piece] = piece.get_position()
@@ -119,7 +134,8 @@ class Board:
 
     def _start_test_game(self):
         """
-        Starts a game for testing piece movement and game logic
+        Starts a game for testing piece movement and game logic.
+        NOT FOR USE BY USERS
         """
 
         b = [[None for _ in range(8)] for _ in range(8)]
@@ -149,7 +165,7 @@ class Board:
     @Profiler.profile
     def move_piece(self, position1: tuple, position2: tuple) -> Union[Piece, None]:
         """
-        Moves a piece from one position to another
+        Moves a piece from one position to another, checking the legality and correctness of the move
         :param position1: A tuple containing a string and a number for x and y. Current Position
         :param position2: A tuple containing a string and a number for x and y. Desired Position
         :return: The piece captured, or None if no piece is captured
@@ -375,9 +391,16 @@ class Board:
         return self._turn
 
     def get_current_move_count(self) -> int:
+        """
+        :return: The current move count
+        """
         return self._move_count
 
     def update_move_count(self, adding=True):
+        """
+        Updates the current move count
+        :param adding: adds if adding is true, if false it decreases move count
+        """
         if adding:
             self._move_count += 1
         else:
@@ -540,15 +563,27 @@ class Board:
         raise Board.NoKing("In get_king_positions. No king found of color: {c}".format(c=color))
 
     def is_game_over(self):
+        """
+        Determines whether or not the game is over based on if the team can no longer move, or if the draw states have
+        been reached
+        :return: True if the game is over, False if the game is not over
+        """
         if len(self.legal_moves()) == 0:
             print('game over')
             self._game_over = True
         elif self._moves_since_capture > 49:
             print('draw (50 move rule)')
             self._game_over = True
+        elif self._move_count > 200:
+            print('draw (200 move rule)')
+            self._game_over = True
         return self._game_over
 
     def winner(self):
+        """
+        Determines which team won when the game ends
+        :return: 1 white won, 2 for white put black in stalemate, negative numbers for black and 0 for a draw
+        """
         if len(self.legal_moves()) == 0 and self.is_in_check(self._turn):
             print('checkmate')
             return self.get_current_turn() * -1
