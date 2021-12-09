@@ -1,4 +1,5 @@
 # Chess AI
+**Use branch main**
 **Must run _pip install pygame_**
 
 The program is known to work with python version 3.7. We do not guarantee any other version of python will work with our program.
