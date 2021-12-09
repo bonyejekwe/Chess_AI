@@ -1,4 +1,5 @@
 # profiler.py: A simple profiling class
+# Professor Rachlin's profiling decorator.
 
 from collections import defaultdict
 import time

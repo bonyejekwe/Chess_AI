@@ -47,12 +47,6 @@ class AI:
             print(board)
             pass
 
-        # update scoring if a team is in check
-#        if board.is_in_check(color):  # if you are in check
-#            score -= 100
-#        if board.is_in_check(-1 * color):  # if opponent is in check
-#            score += 100
-
         white_pieces_left = board.get_pieces_left(1)
         black_pieces_left = board.get_pieces_left(-1)
         num_moves = board.get_current_move_count()
@@ -84,25 +78,18 @@ class AI:
         # general piece development: increase weight if pieces have many options to move
         black_score += 15 * sum([len(p.legal_moves()) for p in black_pieces_left if not isinstance(p, Pawn)])
 
-        # favors opposing team's king in the corner
-        #try:
-        #    if color == 1:
-        #        black_king_x, black_king_y = board.get_king_position(-1)
-        #        score += (board.get_current_move_count()/20) * (((black_king_x - 3)**2) + ((black_king_y - 3) ** 2)) * 20
-        #    else:
-        #        white_king_x, white_king_y = board.get_king_position(1)
-        #        score -= (board.get_current_move_count()/20) * ((white_king_x - 3)**2) + ((white_king_y - 3) ** 2) * 20
-        #except Board.NoKing:
-        #    pass
         score += (white_score-black_score)
         return score
 
     def get_team(self):
+        """
+        :return: The team the ai is
+        """
         return self._team
 
     @staticmethod
     def format_legal_moves(board: Board):
-        """Retrieve the legal moves for the AI. Return as a list of tuples of tuples"""
+        """Retrieve the legal moves for the AI. Return as a list of tuples of tuples. Takes as input a board object."""
         d = dict(board.legal_moves())  # key = piece position : values = list of possible next moves (tuples)
         for pos in d:
             d[pos] = [(pos, val) for val in d[pos]]
@@ -110,7 +97,7 @@ class AI:
         return all_moves
 
     def all_legal_moves(self, board: Board):
-        """Set the formatted legal moves for the AI."""
+        """Set the formatted legal moves for the AI. Takes as input a board object"""
         all_moves = self.format_legal_moves(board)
         self._legal_moves = all_moves
 
@@ -125,7 +112,7 @@ class AI:
 
     # TODO need to make scoring more complex as many board positions will have the same score currently
     @Profiler.profile
-    def minimax(self, board, depth, maximizing_player, maximizing_color):
+    def minimax(self, board: Board, depth:int, maximizing_player:int, maximizing_color:int):
         """Implement minimax algorithm: the best move for the maximizing color looking ahead depth moves on the board
         :param board: The current board being evaluated
         :param depth: The current depth being evaluated
@@ -183,7 +170,7 @@ class AI:
                 if curr_eval < self.beta:
                     self.beta = curr_eval
                 if self.alpha < self.beta and self.alpha != -999999999:
-                    print('Time saved!!!! a<b')
+                    #print('Time saved!!!! a<b')
                     break
 
             if min_or_max == 1:
@@ -200,7 +187,7 @@ class AI:
 
     @Profiler.profile
     def make_move(self, board: Board):
-        """Choose (make a weighted choice) a move for the AI to make and make the move """
+        """Choose (make a weighted choice) a move for the AI to make and make the move. Takes as input a board object"""
         if self.mode == "medium":
             if self._team == 1:
                 start_pos, end_pos = self.minimax(board, 3, 1, 1)[0]  # minimax
