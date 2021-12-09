@@ -11,7 +11,6 @@
 
 
 import random
-from evaluate import Evaluation  # how to evaluate moves (to be implemented)
 from pieces import *
 from board import Board
 import functools
@@ -197,10 +196,6 @@ class AI:
             self.beta = 999999999
         else:
             moves_dict = {m: 1 for m in self._legal_moves}
-            # adjust weights according to AI decision making criteria
-            e = Evaluation(moves_dict, board)
-            moves_dict = e.evaluated(self.mode)
-            # make the move
             lis = [e for e in list(moves_dict.items())]
             moves, weights = [elem[0] for elem in lis], [elem[1] for elem in lis]
             if min(weights) < 0:
