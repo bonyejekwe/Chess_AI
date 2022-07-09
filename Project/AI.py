@@ -4,6 +4,9 @@
 #  -"basic" just favors capturing pieces of equal or lesser value, and favors not moving the king (need add more)
 #  -"medium" is minimax implemented (w/ alpha beta pruning), using AI scoring criteria
 
+import copy
+import time
+import math
 import random
 from pieces import *
 from board import Board
@@ -17,8 +20,6 @@ class AI:
         self._team = color
         self._legal_moves = []
         self.mode = mode  # "random" or "medium",
-        self.alpha = -999999999
-        self.beta = 999999999
 
     @staticmethod
     @Profiler.profile
@@ -96,6 +97,28 @@ class AI:
         return chr(position[0] + 65), position[1] + 1  # a tuple
 
     @Profiler.profile
+    def make_move(self, board: Board):
+        """Choose (make a weighted choice) a move for the AI to make and make the move. Takes as input a board object"""
+        moves_dict = {m: 1 for m in self._legal_moves}
+        lis = [e for e in list(moves_dict.items())]
+        moves, weights = [elem[0] for elem in lis], [elem[1] for elem in lis]
+        if min(weights) < 0:
+            weights = [num - min(weights) for num in weights]
+        start_pos, end_pos = random.choices(moves, weights)[0]
+        start_pos, end_pos = self.num_pos_to_letter_pos(start_pos), self.num_pos_to_letter_pos(end_pos)
+        board.move_piece(start_pos, end_pos)  # move using chess letter notation
+        print(f"moving from {start_pos} to {end_pos}")
+        print(board)
+
+
+class MinimaxAI(AI):
+
+    def __init__(self, color: int, mode: str):
+        super().__init__(color, mode)
+        self.alpha = -999999999
+        self.beta = 999999999
+
+    @Profiler.profile
     def minimax(self, board: Board, depth: int, maximizing_player: int, maximizing_color: int):
         """Implement minimax algorithm: the best move for the maximizing color looking ahead depth moves on the board
         :param board: The current board being evaluated
@@ -167,20 +190,168 @@ class AI:
     @Profiler.profile
     def make_move(self, board: Board):
         """Choose (make a weighted choice) a move for the AI to make and make the move. Takes as input a board object"""
-        if self.mode == "medium":
-            if self._team == 1:
-                start_pos, end_pos = self.minimax(board, 3, 1, 1)[0]  # minimax
-            elif self._team == -1:
-                start_pos, end_pos = self.minimax(board, 3, 1, -1)[0]  # minimax
-            self.alpha = -999999999
-            self.beta = 999999999
-        else:
-            moves_dict = {m: 1 for m in self._legal_moves}
-            lis = [e for e in list(moves_dict.items())]
-            moves, weights = [elem[0] for elem in lis], [elem[1] for elem in lis]
-            if min(weights) < 0:
-                weights = [num - min(weights) for num in weights]
-            start_pos, end_pos = random.choices(moves, weights)[0]
+        start_pos, end_pos = self.minimax(board, 3, 1, self._team)[0]  # minimax
+        self.alpha = -999999999
+        self.beta = 999999999
+        start_pos, end_pos = self.num_pos_to_letter_pos(start_pos), self.num_pos_to_letter_pos(end_pos)
+        board.move_piece(start_pos, end_pos)  # move using chess letter notation
+        print(f"moving from {start_pos} to {end_pos}")
+        print(board)
+
+
+class Node:
+
+    def __init__(self, board: Board, last_move, parent, first_move):
+        # total = wins;  score = total / visits
+        self.board = board
+        self.move = last_move  # move from parent to node
+        self.parent = parent  # parent node
+        self.children = []  # list of child nodes
+        self.total = 0
+        self.visits = 0
+        self.depth = 0
+        self.samples = []
+        self.first_move = first_move  # intial move
+
+        if parent != None:
+            self.depth = parent.depth + 1
+
+    def is_leaf_node(self):
+        return len(self.children) == 0
+
+    def select_node(self):
+        """Choose a node using the selection policy formula"""
+        c = 4000000
+        lis = []
+        for n in self.children:
+            if n.visits == 0:
+                s = float('inf')
+            else:
+                s = (n.total / n.visits) + (c * ((math.log(self.visits) / n.visits) ** 0.5))
+            lis.append((n, s))
+
+        v = max([e[1] for e in lis])
+        best = [nd for nd, val in lis if val == v]
+        child = random.choice(best)
+        return child
+
+    @staticmethod
+    def temp_board_move(board, move):
+        """Return a copy of the board after temporarily making a move"""
+        board1 = copy.deepcopy(board)
+        # make the move on the board
+        piece1, piece2 = board1.get_piece_from_position(move[0]), board1.get_board()[move[1][1]][move[1][0]]
+        pos1x, pos1y, pos2x, pos2y = move[0][0], move[0][1], move[1][0], move[1][1]
+        board1.update_pieces(piece1, pos2x, pos2y)
+        if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
+            board1.update_pieces(piece2, pos2x, pos2y, delete=True)
+        board1.get_board()[pos1y][pos1x], board1.get_board()[pos2y][pos2x] = None, board1.get_board()[pos1y][
+            pos1x]
+        board1.update_move_count()
+        board1.switch_turn()
+        return board1
+
+    def expand_node(self):
+        if self.depth > 3:
+            return self
+
+        board = self.board
+        if self.parent is None:  # is the root node
+            for move in AI.format_legal_moves(board):
+                next_board = self.temp_board_move(board, move)
+                self.children.append(Node(next_board, move, self, move))
+        else:  # has a parent
+            for move in AI.format_legal_moves(board):
+                next_board = self.temp_board_move(board, move)
+                self.children.append(Node(next_board, move, self, self.first_move))
+
+        return random.choice(self.children)  # random node
+
+    def backpropogate(self, result):
+        self.visits += 1
+        self.total += result
+        self.samples.append(result)
+
+        if self.parent != None:
+            self.parent.backpropogate(result)
+
+
+class MCTSAI(AI):
+
+    def best_board(self, node):
+        """Best action"""
+        counter = {}
+        for n in node.children:
+            print(n.samples)
+            if len(n.samples) == 0:
+                sample = 0
+            else:
+                sample = sum(n.samples) / len(n.samples)  # [sample] = [n.total / n.visits]
+
+            if n.move in counter.keys():
+                counter[n.move] += [sample]
+            else:
+                counter[n.move] = [sample]
+
+        count = {}
+        for move in counter.keys():  # or self.median(count[act]); or min(count[act])
+            count[move] = sum(counter[move]) / len(counter[move])  # average for each list
+
+        lis = count.items()
+        # print([(a, count[a], counter[a]) for a in counter.keys()])
+        v = max(count.values())
+        best = [move for move, val in lis if val == v]
+        return random.choice(best)
+
+    def simulate(self, board, first_act):
+        """simulate with a copy of the board"""
+        if board.is_game_over():
+            return board.winner()
+
+        # random move on the board
+        moves = AI.format_legal_moves(board)
+        move = random.choice(moves)
+
+        # make move on the board  ( note: don't make deepcopy each time!!!!)
+        piece1, piece2 = board.get_piece_from_position(move[0]), board.get_board()[move[1][1]][move[1][0]]
+        pos1x, pos1y, pos2x, pos2y = move[0][0], move[0][1], move[1][0], move[1][1]
+        board.update_pieces(piece1, pos2x, pos2y)
+        if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
+            board.update_pieces(piece2, pos2x, pos2y, delete=True)
+        board.get_board()[pos1y][pos1x], board.get_board()[pos2y][pos2x] = None, board.get_board()[pos1y][
+            pos1x]
+        board.update_move_count()
+        board.switch_turn()
+
+        # recursive call till game over
+        return self.simulate(board, first_act)
+
+    def simulation(self, node):
+        """Run a simulation, return a resulting score"""
+        b = copy.deepcopy(node.board)
+        return self.simulate(b, node.first_move)
+
+    def mcts(self, board: Board):
+        start = time.time()
+        root = Node(board, None, None, None)
+        root.expand_node()
+        i = 0
+        while time.time() - start < 5:  # 0.9 seconds
+            n = root
+            while not n.is_leaf_node():
+                n = n.select_node()
+            if n.visits != 0:  # if leaf node not visited yet, then expand it
+                n = n.expand_node()
+            result = self.simulation(n)
+            n.backpropogate(result)
+            i += 1
+        print(i)
+        return self.best_board(root)
+
+    @Profiler.profile
+    def make_move(self, board: Board):
+        """Choose (make a weighted choice) a move for the AI to make and make the move. Takes as input a board object"""
+        start_pos, end_pos = self.mcts(board)
         start_pos, end_pos = self.num_pos_to_letter_pos(start_pos), self.num_pos_to_letter_pos(end_pos)
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
