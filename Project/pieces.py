@@ -79,7 +79,7 @@ class Piece:
     def legal_moves(self):
         """Returns a list of legal moves for that piece based only on the restrictions for the piece type itself
         Inherited by all of the pieces to evaluate each piece's respective criteria"""
-        return self._all_legal_moves[(self._name, self.get_position())]
+        return self._all_legal_moves[self._name][self._ypos][self._xpos]
 
     def can_move_to(self, new_xpos, new_ypos):
         """Return true if piece can move to (new_xpos, new_ypos), false otherwise"""

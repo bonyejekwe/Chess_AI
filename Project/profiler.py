@@ -32,7 +32,7 @@ class Profiler:
 
     @staticmethod
     def report():
-        print("Function              Calls     TotSec   Sec/Call")
+        print("Function                   Calls     TotSec   Sec/Call")
         for name, num in Profiler.calls.items():
             sec = Profiler.time[name]
-            print(f'{name:20s} {num:6d} {sec:10.6f} {sec / num:10.6f}')
+            print(f'{name:25s} {num:6d} {sec:10.8f} {sec / num:10.8f}')

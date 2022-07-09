@@ -186,7 +186,7 @@ class Board:
                                        "from team {t2}".format(t1=self._turn, t2=piece1.get_color()))
 
         # Checks to see if there are any pieces in between where a piece is and where it wants to go
-        if self.is_piece_in_the_way(pos1, pos2):
+        if self.is_piece_in_the_way(pos1[0], pos1[1], pos2[0], pos2[1]):
             raise Board.PieceInTheWayError("There is(are) a piece(s) in between where you are and where you would"
                                            " like to move")
 
@@ -235,7 +235,13 @@ class Board:
         return None
 
     @Profiler.profile
-    def pieces_in_the_way(self, pos1: tuple, pos2: tuple) -> list:
+    def is_piece_in_the_way(self, pos1x: int, pos1y: int, pos2x: int, pos2y: int) -> bool:
+        """
+        Checks if there are any pieces in the way between two different positions on the board
+        :param pos1: The position as a tuple of indices of where the first piece is
+        :param pos2: The position as a tuple of indices of where the first piece would like to go
+        :return: True if there are pieces in the way, false if not
+        """
         """
         Finds the pieces in between where a piece is and where it wants to go. It ignores knights as knights can jump
         over pieces. The returned list contains a list of None and piece objects. The returned list does not include
@@ -244,46 +250,42 @@ class Board:
         :param pos2: Where the piece wants to go
         :return: A list of all the pieces or empty spaces in between where a piece is and where it wants to go
         """
-        pos1x, pos1y = pos1
-        pos2x, pos2y = pos2
-        piece1 = self.get_piece_from_position(pos1)
-        in_the_way = []
+        piece1 = self.get_piece_from_position((pos1x, pos1y))
+
+        if isinstance(piece1, Knight):  # Knight can jump over pieces so it doesn't matter
+            return False
+
         # Checks to see if there are any pieces blocking each other
-        if not isinstance(piece1, Knight):  # Knight can jump over pieces so it doesn't matter
-            dx = pos2x - pos1x  # difference in y
-            dy = pos2y - pos1y  # difference in x
+        dx = pos2x - pos1x  # difference in y
+        dy = pos2y - pos1y  # difference in x
 
-            # Case where the piece moved only in the y direction
-            if dx == 0:  # can assume dy != 0 as validate_turn_color will have thrown an error
-                for i in range(min(pos1y, pos2y) + 1, max(pos1y, pos2y)):
-                    in_the_way.append(self._board[i][pos2x])
+        # Case where the piece moved only in the y direction
+        if dx == 0:  # can assume dy != 0 as validate_turn_color will have thrown an error
+            for i in range(min(pos1y, pos2y) + 1, max(pos1y, pos2y)):
+                if self._board[i][pos2x] is not None:
+                    return True
 
-            # Case where the piece only moved in the x direction
-            elif dy == 0:  # can assume dx != 0 as validate_turn_color will have thrown an error
-                in_the_way = self._board[pos2y][min(pos1x, pos2x) + 1:max(pos1x, pos2x)]
+        # Case where the piece only moved in the x direction
+        elif dy == 0:  # can assume dx != 0 as validate_turn_color will have thrown an error
+            for i in range(min(pos1x, pos2x) + 1, max(pos1x, pos2x)):
+                if self._board[pos2y][i] is not None:
+                    return True
 
-            # Case where the piece moved diagonally
-            else:
-                # Determines the step for the range function to come up with values for diagonal
-                if pos2x > pos1x:
-                    step = 1
-                else:
-                    step = -1
-                # Makes the list of the x values along the diagonal
-                lst_x = list(range(pos1x + step, pos2x, step))  # adds step so we don't consider current piece position
-
-                # Determines the step for the range function to come up with values for diagonal
-                if pos2y > pos1y:
-                    step = 1
-                else:
-                    step = -1
-                # Makes the list of the y values along the diagonal
-                lst_y = list(range(pos1y + step, pos2y, step))  # adds step so we don't consider current piece position
-                for x, y in zip(lst_x, lst_y):
-                    in_the_way.append(self._board[y][x])
-        # print(in_the_way)
-        return in_the_way
-
+        # Case where the piece moved diagonally (iterate over x from smallest to largest)
+        else:
+            minx, maxx = min(pos1x, pos2x), max(pos1x, pos2x)  # to iterate over x from smallest to largest
+            if dy / dx > 0:  # positive if the slope is positive
+                miny = min(pos1y, pos2y)
+                for i in range(maxx - minx - 1):  # 0, 1, ... n, n is # in between
+                    # if isinstance(self._board[miny + i + 1][minx + i + 1], Piece):
+                    if self._board[miny + i + 1][minx + i + 1] is not None:
+                        return True
+            else:  # if the slope is negative
+                maxy = max(pos1y, pos2y)
+                for i in range(maxx - minx - 1):  # 0, 1, ... n, n is # in between
+                    if self._board[maxy - i - 1][minx + i + 1] is not None:
+                        return True
+        return False
         # noinspection PyUnreachableCode
         """
         The explanation of how the diagonal works: Say if you wanted to move Queen D1 to A3, which are indices 0,3 to 
@@ -296,18 +298,7 @@ class Board:
         step is set to -1 so the range function decreases. It adds step to the initial value as it is just position 1 
         which we know is occupied. It does the exact same thing but for the y direction. It then iterates through all
         the pieces along the diagonal and adds each individual one to the array in_the_way
-
         """
-
-    def is_piece_in_the_way(self, pos1: tuple, pos2: tuple) -> bool:
-        """
-        Checks if there are any pieces in the way between two different positions on the board
-        :param pos1: The position as a tuple of indices of where the first piece is
-        :param pos2: The position as a tuple of indices of where the first piece would like to go
-        :return: True if there are pieces in the way, false if not
-        """
-        in_the_way = self.pieces_in_the_way(pos1, pos2)
-        return in_the_way.count(None) != len(in_the_way)
 
     def switch_turn(self):
         """
@@ -423,29 +414,17 @@ class Board:
         """Returns where a specified team is in check or not
         :param c: the color corresponding to the specified team
         :return True if that team is in check and false otherwise"""
-        # get the position of the corresponding king (from the dictionary of pieces left)
-        # set consider to corresponding dictionary
-        if c == 1:
-            pos = self.get_king_position(1)
-            consider = self._black_pieces
-        else:
-            pos = self.get_king_position(-1)
-            consider = self._white_pieces
-
-        try:
-            pos[0]
-        except NameError:
-            raise Board.NoKing(f'In is in check. {c} has no king.')
+        pos1x, pos1y = self.get_king_position(c)  # get corresponding king position (from the dictionary of pieces left)
+        consider = self.get_pieces_left(-1 * c)  # set consider to corresponding dictionary (the other team's pieces)
 
         for p in consider.keys():
-            pos2 = p.get_position()
+            pos2x, pos2y = consider[p]
             if isinstance(p, Pawn):
                 # checks if the king is diagonal to the pawn
-                if (pos2[0] + 1 == pos[0] or pos2[0] - 1 == pos[0]) and pos2[1] + p.get_color() == pos[1]:
+                if (pos2y + p.get_color() == pos1y) and (abs(pos2x - pos1x) == 1):
                     return True
-
             else:
-                if p.can_move_to(pos[0], pos[1]) and (not self.is_piece_in_the_way(pos2, pos)):
+                if p.can_move_to(pos1x, pos1y) and (not self.is_piece_in_the_way(pos2x, pos2y, pos1x, pos1y)):
                     return True
 
         return False
@@ -472,45 +451,34 @@ class Board:
             return self._legal_moves
 
         possible_moves = collections.defaultdict(list)
+        consider = self.get_pieces_left(self.get_current_turn())
 
-        if self.get_current_turn() == 1:
-            consider = self._white_pieces
-        else:
-            consider = self._black_pieces
-
-        for piece1 in consider.keys():
-            possible = piece1.legal_moves()
-            piece1_position = consider[piece1]
-            # print(piece1_position == consider[piece1])
-            pos1x, pos1y = piece1_position
-
-            for e in possible:
-                if not self.is_piece_in_the_way(piece1_position, e):
-                    piece2 = self._board[e[1]][e[0]]  # either None or Piece
+        for piece1, pos1 in consider.items():
+            pos1x, pos1y = pos1  # = consider[piece1]
+            for e1, e2 in piece1.legal_moves():
+                if not self.is_piece_in_the_way(pos1x, pos1y, e1, e2):
+                    piece2 = self._board[e2][e1]  # either None or Piece
                     if isinstance(piece2, Piece) and self.validate_turn_color(piece2):  # don't capture same team
                         continue
-                    if (isinstance(piece1, Pawn) and ((isinstance(piece2, Piece) and (e[0]-pos1x == 0))
-                                                      or (not isinstance(piece2, Piece) and abs(e[0]-pos1x) == 1))):
+                    if (isinstance(piece1, Pawn) and ((isinstance(piece2, Piece) and (e1-pos1x == 0))
+                                                      or (not isinstance(piece2, Piece) and abs(e1-pos1x) == 1))):
                         continue
                     if isinstance(piece2, King):  # don't add moves that capture the king
                         continue
-                    self.update_pieces(piece1, e[0], e[1])  # temporarily make the move
+                    self.update_pieces(piece1, e1, e2)  # temporarily make the move
                     if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
                         pos2x, pos2y = piece2.get_position()
                         self.update_pieces(piece2, pos2x, pos2y, delete=True)
-                    self._board[pos1y][pos1x], self._board[e[1]][e[0]] = None, self._board[pos1y][pos1x]
+                    self._board[pos1y][pos1x], self._board[e2][e1] = None, self._board[pos1y][pos1x]
                     self.update_move_count()
                     if not self.is_in_check(self.get_current_turn()):
-                        possible_moves[piece1_position].append(e)
+                        possible_moves[(pos1x, pos1y)].append((e1, e2))
                     self.update_pieces(piece1, pos1x, pos1y, revert=True)  # unmake the temporary move
                     if isinstance(piece2, Piece):  # add back piece to dict if necessary
                         pos2x, pos2y = piece2.get_position()
                         self.update_pieces(piece2, pos2x, pos2y, adding=True)
-                    self._board[pos1y][pos1x], self._board[e[1]][e[0]] = self._board[e[1]][e[0]], piece2
+                    self._board[pos1y][pos1x], self._board[e2][e1] = self._board[e2][e1], piece2
                     self.update_move_count(False)
-
-        # if len(possible_moves) == 0:
-        #    self._game_over = True
 
         self._legal_moves = possible_moves
         return possible_moves
