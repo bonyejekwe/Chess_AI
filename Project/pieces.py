@@ -13,9 +13,6 @@ class InvalidMoveError(Exception):
 
 class Piece:
 
-    # all_positions: a SINGLE list (of len() = 64) of all board positions to filter piece legal moves
-    all_positions = [(i % 8, i // 8) for i in range(64)]  # [(0, 0), (1, 0), (2, 0), ...  (5, 7), (6, 7), (7, 7)]
-
     def __init__(self, xpos, ypos, color: int):
         self._original_xpos = xpos
         self._original_ypos = ypos

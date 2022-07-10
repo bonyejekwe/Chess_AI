@@ -1,10 +1,10 @@
-
 # displayGame.py: a graphical user interface (GUI) for our chess AI
 
 from board import Board
+import pygame
 from AI import *
 from pieces import *
-import pygame
+from all_moves import all_positions
 
 
 class InvalidTeamError(Exception):
@@ -55,11 +55,10 @@ class PlayGame:
         self.display_board.fill(self.white)  # Fill it with white
 
         # Draw black squares on the board
-        for x in range(0, 8):  # Loop through the x-axis
-            for y in range(0, 8):  # Loop through the y-axis
-                if (x + y) % 2 == 1:
-                    pygame.draw.rect(self.display_board, self.black,
-                                     (x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size))
+        for x, y in all_positions:  # Loop through all_positions
+            if (x + y) % 2 == 1:
+                pygame.draw.rect(self.display_board, self.black,
+                                 (x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size))
 
     def run_game(self):
         """Run game using num of AI's (1=player vs AI, 2=AI vs AI). Defaults to AI vs AI"""
@@ -119,7 +118,7 @@ class PlayGame:
 
                         # Change the background color of the cell
                         pygame.draw.rect(self.display_board, self.chosen_color, (
-                        (x) * self.cell_size, (7 - y) * self.cell_size, self.cell_size, self.cell_size))
+                            (x) * self.cell_size, (7 - y) * self.cell_size, self.cell_size, self.cell_size))
 
                         piece_to_move_chosen = True  # Change the variable to true
                         chosen_piece = [x, y]  # Save the location of the chosen piece
@@ -140,8 +139,8 @@ class PlayGame:
 
                         # Change the background color of the last location
                         pygame.draw.rect(self.display_board, overwrite_color, (
-                        chosen_piece[0] * self.cell_size, (7 - chosen_piece[1]) * self.cell_size, self.cell_size,
-                        self.cell_size))
+                            chosen_piece[0] * self.cell_size, (7 - chosen_piece[1]) * self.cell_size, self.cell_size,
+                            self.cell_size))
 
                         piece_to_move_chosen = False  # set the piece_to_move_chosen to false
                         self.board.switch_turn()  # Change the current turn
@@ -158,8 +157,8 @@ class PlayGame:
 
                         # Change the background color of the last location
                         pygame.draw.rect(self.display_board, overwrite_color, (
-                        chosen_piece[0] * self.cell_size, (7 - chosen_piece[1]) * self.cell_size, self.cell_size,
-                        self.cell_size))
+                            chosen_piece[0] * self.cell_size, (7 - chosen_piece[1]) * self.cell_size, self.cell_size,
+                            self.cell_size))
 
                         piece_to_move_chosen = False  # Reset the chosen piece variable
 
@@ -193,20 +192,16 @@ class PlayGame:
         """Blitzes the pieces onto the board"""
         brd = self.board.get_board()  # Get the board
 
-        for y in range(len(brd)):  # Iterating over rows\
-            for x in range(len(brd[y])):  # Iterating over the columns
-                if isinstance(brd[x][y], Piece):  # Check that the element is a piece
-                    piece_type = str(brd[x][y])[0]  # Find the piece type
-                    piece_color = brd[x][y].get_color()  # 1 is white and -1 is black
+        for x, y in all_positions:  # iterate over all_positions
+            if isinstance(brd[x][y], Piece):  # Check that the element is a piece
+                piece_type = str(brd[x][y])[0]  # Find the piece type
+                piece_color = brd[x][y].get_color()  # 1 is white and -1 is black
 
-                    # Draw the respective piece
-                    if piece_color == 1:
-                        game_display.blit(self.white_pieces[piece_type],
-                                         (self.cell_size * y, self.cell_size * (7 - x)))
-
-                    elif piece_color == -1:
-                        game_display.blit(self.black_pieces[piece_type],
-                                         (self.cell_size * y, self.cell_size * (7 - x)))
+                # Draw the respective piece
+                if piece_color == 1:
+                    game_display.blit(self.white_pieces[piece_type], (self.cell_size * y, self.cell_size * (7 - x)))
+                elif piece_color == -1:
+                    game_display.blit(self.black_pieces[piece_type], (self.cell_size * y, self.cell_size * (7 - x)))
 
 
 def main():
