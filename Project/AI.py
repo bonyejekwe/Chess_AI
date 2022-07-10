@@ -16,10 +16,9 @@ from profiler import Profiler
 
 class AI:
 
-    def __init__(self, color: int, mode: str):
+    def __init__(self, color: int):
         self._team = color
         self._legal_moves = []
-        self.mode = mode  # "random" or "medium",
 
     @staticmethod
     @Profiler.profile
@@ -105,7 +104,6 @@ class AI:
         if min(weights) < 0:
             weights = [num - min(weights) for num in weights]
         start_pos, end_pos = random.choices(moves, weights)[0]
-        start_pos, end_pos = self.num_pos_to_letter_pos(start_pos), self.num_pos_to_letter_pos(end_pos)
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
         print(board)
@@ -113,10 +111,11 @@ class AI:
 
 class MinimaxAI(AI):
 
-    def __init__(self, color: int, mode: str):
-        super().__init__(color, mode)
+    def __init__(self, color: int):
+        super().__init__(color)
         self.alpha = -999999999
         self.beta = 999999999
+        self.max_depth = 3
 
     @Profiler.profile
     def minimax(self, board: Board, depth: int, maximizing_player: int, maximizing_color: int):
@@ -190,10 +189,7 @@ class MinimaxAI(AI):
     @Profiler.profile
     def make_move(self, board: Board):
         """Choose (make a weighted choice) a move for the AI to make and make the move. Takes as input a board object"""
-        start_pos, end_pos = self.minimax(board, 3, 1, self._team)[0]  # minimax
-        self.alpha = -999999999
-        self.beta = 999999999
-        start_pos, end_pos = self.num_pos_to_letter_pos(start_pos), self.num_pos_to_letter_pos(end_pos)
+        start_pos, end_pos = self.minimax(board, self.max_depth, 1, self._team)[0]  # minimax
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
         print(board)
@@ -211,7 +207,7 @@ class Node:
         self.visits = 0
         self.depth = 0
         self.samples = []
-        self.first_move = first_move  # intial move
+        self.first_move = first_move  # initial move
 
         if parent != None:
             self.depth = parent.depth + 1
@@ -352,7 +348,6 @@ class MCTSAI(AI):
     def make_move(self, board: Board):
         """Choose (make a weighted choice) a move for the AI to make and make the move. Takes as input a board object"""
         start_pos, end_pos = self.mcts(board)
-        start_pos, end_pos = self.num_pos_to_letter_pos(start_pos), self.num_pos_to_letter_pos(end_pos)
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
         print(board)

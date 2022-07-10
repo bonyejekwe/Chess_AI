@@ -36,7 +36,6 @@ class Board:
         A1 is 0,0. H8 is 7,7
         Move count is number of moves
         """
-
         self._board = list()
         self._move_count = 0
         self._turn = 1  # sets the turn to white
@@ -160,25 +159,22 @@ class Board:
                         self._black_pieces[self._board[i][j]] = self._board[i][j].get_position()
 
     @Profiler.profile
-    def move_piece(self, position1: tuple, position2: tuple) -> Union[Piece, None]:
+    def move_piece(self, pos1: tuple, pos2: tuple) -> Union[Piece, None]:
         """
         Moves a piece from one position to another, checking the legality and correctness of the move
-        :param position1: A tuple containing a string and a number for x and y. Current Position
-        :param position2: A tuple containing a string and a number for x and y. Desired Position
+        :param pos1: A tuple containing int positions for x and y. Current Position
+        :param pos2: A tuple containing int positions for x and y. Desired Position
         :return: The piece captured, or None if no piece is captured
         """
-
-        pos1 = self.letter_pos_to_num_pos(position1)
-        pos2 = self.letter_pos_to_num_pos(position2)
         pos1x, pos1y = pos1
         pos2x, pos2y = pos2
 
         if pos2 not in self.legal_moves()[pos1]:
             raise Board.InvalidMoveError("The move from {pos1} to {pos2} is not in the board legal moves list".format(
-                pos1=position1, pos2=position2))
+                pos1=pos1, pos2=pos2))
 
         if self.is_position_empty(pos1):  # Trying to move a piece at a position that has no piece
-            raise Board.EmptySpaceError("The space at {pos} is empty".format(pos=position1))
+            raise Board.EmptySpaceError("The space at {pos} is empty".format(pos=pos1))
         piece1 = self.get_piece_from_position(pos1)
 
         if not self.validate_turn_color(piece1):  # Checks to see if it is that pieces turn
@@ -195,7 +191,7 @@ class Board:
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
             if isinstance(piece1, Pawn) and pos2x != pos1x:  # sets pawn piece capture to false
                 raise Board.InvalidPawnMove("Trying to move the pawn from {pos1} to {pos2}, which is diagonal but the"
-                                            "pawn is not capturing".format(pos1=position1, pos2=position2))
+                                            "pawn is not capturing".format(pos1=pos1, pos2=pos2))
             if not (isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0)):  # regular move, makes sure a pawn doesn't have to be promoted
                 self.update_pieces(piece1, pos2x, pos2y)  # piece1.move(pos2x, pos2y)
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
@@ -214,7 +210,7 @@ class Board:
             if not self.validate_turn_color(piece2):
                 if isinstance(piece1, Pawn) and abs(pos2x - pos1x) != 1:
                     raise Board.InvalidPawnMove("Trying to move the pawn from {pos1} to {pos2} to capture, but did"
-                                                "not move diagonal".format(pos1=position1, pos2=position2))
+                                                "not move diagonal".format(pos1=pos1, pos2=pos2))
                 self.update_pieces(piece1, pos2x, pos2y)  # piece1.move(pos2x, pos2y)  # moves individual piece object
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
                 self.update_move_count()
@@ -231,24 +227,18 @@ class Board:
             # otherwise catches the error when you try and capture a piece of the same team
             else:
                 raise Board.WrongTeamError("Trying to capture piece at {pos} but it is the same team of {team}".format(
-                    pos=position2, team=self._turn))
+                    pos=pos2, team=self._turn))
         return None
 
     @Profiler.profile
     def is_piece_in_the_way(self, pos1x: int, pos1y: int, pos2x: int, pos2y: int) -> bool:
         """
         Checks if there are any pieces in the way between two different positions on the board
-        :param pos1: The position as a tuple of indices of where the first piece is
-        :param pos2: The position as a tuple of indices of where the first piece would like to go
+        :param pos1x: The x position of the first piece
+        :param pos1y: The y position of the first piece
+        :param pos2x: The x position of where the first piece would like to go
+        :param pos2y: The y position of where the first piece would like to go
         :return: True if there are pieces in the way, false if not
-        """
-        """
-        Finds the pieces in between where a piece is and where it wants to go. It ignores knights as knights can jump
-        over pieces. The returned list contains a list of None and piece objects. The returned list does not include
-        position1, but it does include position 2.
-        :param pos1: The initial position of the piece
-        :param pos2: Where the piece wants to go
-        :return: A list of all the pieces or empty spaces in between where a piece is and where it wants to go
         """
         piece1 = self.get_piece_from_position((pos1x, pos1y))
 
@@ -301,9 +291,7 @@ class Board:
         """
 
     def switch_turn(self):
-        """
-        Switches the turn from white to black or black to white. Resets the dictionary for stored legal moves
-        """
+        """Switches the turn from white to black or black to white. Resets the dictionary for stored legal moves"""
         self._turn *= -1
         self._legal_moves = {}
 
@@ -366,22 +354,15 @@ class Board:
         return self._board
 
     def get_captured(self) -> list:
-        """
-        :return: The list of captured items
-        """
+        """:return: The list of captured items"""
         return self._captured
 
     def get_current_turn(self) -> int:
-        """
-        1 is white, -1 is black
-        :return: The integer representing who's turn it is
-        """
+        """:return: The integer representing who's turn it is (1 is white, -1 is black)"""
         return self._turn
 
     def get_current_move_count(self) -> int:
-        """
-        :return: The current move count
-        """
+        """:return: The current move count"""
         return self._move_count
 
     def update_move_count(self, adding=True):
