@@ -7,25 +7,19 @@ from profiler import Profiler
 from all_moves import all_positions
 
 
+class NoKingError(Exception):
+
+    def __init__(self, color):
+        super().__init__(f"No king found of color {color}")
+
+
+class InvalidMoveError(Exception):
+
+    def __init__(self, pos1, pos2):
+        super().__init__(f"The move {pos1} to {pos2} is not a legal move.")
+
+
 class Board:
-
-    class NoKing(Exception):
-        pass
-
-    class InvalidPawnCapturing(Exception):
-
-        def __init__(self, pos1, pos2):
-            super().__init__(f"Pawn move {pos1} to {pos2} to capture, but pawn did not move diagonally.")
-
-    class InvalidPawnDiagonalMove(Exception):
-
-        def __init__(self, pos1, pos2):
-            super().__init__(f"Pawn move {pos1} to {pos2} is diagonal, but pawn is not capturing.")
-
-    class InvalidMoveError(Exception):
-
-        def __init__(self, pos1, pos2):
-            super().__init__(f"The move {pos1} to {pos2} is not a legal move.")
 
     def __init__(self):
         """
@@ -41,14 +35,13 @@ class Board:
         self._game_over = False  # change when checkmate happens
         self._moves_since_capture = 0
         self._legal_moves = {}  # dictionary to temporarily store legal moves
+        self._last_move = []
 
         # store references to the piece objects {key=color, value={key=piece, val=pos}}
         self._pieces_left = collections.defaultdict(dict)
 
     def start_game(self):
-        """
-        Starts game, fills in all pieces in the standard starting
-        """
+        """Starts game, fills in all pieces in the standard starting"""
         white_back_row = [Rook(0, 0, 1), Knight(1, 0, 1), Bishop(2, 0, 1), Queen(3, 0, 1), King(4, 0, 1),
                           Bishop(5, 0, 1), Knight(6, 0, 1), Rook(7, 0, 1)]
         white_pawns = [Pawn(i, 1, 1) for i in range(8)]
@@ -77,8 +70,7 @@ class Board:
         """
         Will get all of the pieces still on the board as well as their locations of a given color
         :param color: color you would like to get the pieces of
-        :return: A dictionary of all of the pieces of a certain color, the key is the piece object and value is a
-        position as a tuple
+        :return: A dictionary of all the pieces for that color. key=piece object, value=position tuple
         """
         return self._pieces_left[color]
 
@@ -111,11 +103,7 @@ class Board:
         self._pieces_left[piece.get_color()][piece] = piece.get_position()
 
     def _start_test_game(self):
-        """
-        Starts a game for testing piece movement and game logic.
-        NOT FOR USE BY USERS
-        """
-
+        """Starts a game for testing piece movement and game logic. (Testing purposes only!!!)"""
         b = [[None for _ in range(8)] for _ in range(8)]
 
         b[0][0] = King(0, 0, 1)
@@ -135,39 +123,66 @@ class Board:
                 p = self._board[i][j]
                 self._pieces_left[p.get_color()][p] = p.get_position()
 
-    def _make_move_to_space(self, piece: Piece, pos2x: int, pos2y: int):
-        """make move on board"""
-        pos1x, pos1y = piece.get_position()
-        self.update_pieces(piece, pos2x, pos2y)  # piece1.move(pos2x, pos2y)
-        self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece, None
-        self.update_move_count()
-
     def _pawn_promotion(self, pawn: Pawn, pos2x: int, pos2y: int):
-        """Promote a pawn"""
-        pos1x, pos1y = pawn.get_position()
-        self.update_pieces(pawn, pos2x, pos2y)  # used to make sure pawn can't promote on wrong side
-        self.update_pieces(pawn, pos2x, pos2y, delete=True)  # piece1.move(pos2x, pos2y)
+        """
+        Promote a pawn by replacing it with a queen
+        :return deleted pawn
+        """
+        self.update_pieces(pawn, pos2x, pos2y, delete=True)  # delete the pawn
         piece1 = Queen(pos2x, pos2y, pawn.get_color())
-        self.update_pieces(piece1, pos2x, pos2y, adding=True)
-        self._board[pos1y][pos1x], self._board[pos2y][pos2x] = None, piece1
+        self.update_pieces(piece1, pos2x, pos2y, adding=True)  # add the queen
+        return pawn
+
+    def castle(self, king, rook, direc):
+        """Castle"""
+        king_pos = king.get_position()
+        pos1x, pos1y = rook.get_position()
+        pos2x, pos2y,  = king_pos[0] - direc, king_pos[1]
+        self._board[pos2y][pos2x], self._board[pos1y][pos1x] = rook, None
+        self.update_pieces(rook, pos2x, pos2y)
+
+    def _make_move_to_space(self, piece: Piece, pos2x: int, pos2y: int) -> Union[Piece, None]:
+        """
+        make move on board
+        :return deleted pawn if it was promoted, None otherwise
+        """
+        pos1x, pos1y = piece.get_position()
+        self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece, None
+        self.update_pieces(piece, pos2x, pos2y)
         self.update_move_count()
+        self._moves_since_capture += 1  # for checking endgame
+
+        if isinstance(piece, Pawn) and (pos2y == 0 or pos2y == 7):
+            pawn = self._pawn_promotion(piece, pos2x, pos2y)
+            return pawn
+        elif isinstance(piece, King) and (abs(pos2x - pos1x) == 2):
+            # rook_map = {2: 0, 6: 7}  # map the x_val
+            if pos2x == 2:
+                rook_x = 0
+                step = -1
+            elif pos2x == 6:
+                rook_x = 7
+                step = 1
+            # need to check this
+            rook = self.get_piece_from_position((rook_x, pos2y))
+            self.castle(piece, rook, step)
+
+        return None
 
     def _capture_piece(self, piece1, piece2):
         """capture piece2 with piece1"""
         pos1x, pos1y = piece1.get_position()
         pos2x, pos2y = piece2.get_position()
-        self.update_pieces(piece1, pos2x, pos2y)  # piece1.move(pos2x, pos2y)  # moves individual piece object
-        self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # swaps positions on the board
+        self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # update positions on the board
+        self.update_pieces(piece1, pos2x, pos2y)  # moves piece to new position
+        self.update_pieces(piece2, pos2x, pos2y, delete=True)  # delete captured piece
         self.update_move_count()
-        self.update_pieces(piece2, pos2x, pos2y, delete=True)
-        self._captured.append(piece2)  # adds the captured piece to an array of captured pieces
-        if isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0):  # Pawn promotion after capture
-            self.update_pieces(piece1, pos2x, pos2y, delete=True)
-            piece1 = Queen(pos2x, pos2y, piece1.get_color())
-            self._board[pos2y][pos2x] = piece1
-            self.update_pieces(piece1, pos2x, pos2y, adding=True)
-
         self._moves_since_capture = 0  # for checking endgame
+
+        if isinstance(piece1, Pawn) and (pos2y == 0 or pos2y == 7):  # Pawn promotion after capture
+            pawn = self._pawn_promotion(piece1, pos2x, pos2y)
+            return pawn  # TODO: fix, should return both captured piece and replaced pawn!!!!!!
+
         return piece2  # returns the piece captured
 
     @Profiler.profile
@@ -178,31 +193,21 @@ class Board:
         :param pos2: A tuple containing int positions for x and y. Desired Position
         :return: The piece captured, or None if no piece is captured
         """
-        pos1x, pos1y = pos1
-        pos2x, pos2y = pos2
         piece1 = self.get_piece_from_position(pos1)  # can be piece or none
         piece2 = self.get_piece_from_position(pos2)  # can be piece or none
 
         # Note: legal moves shows all possible moves for the team whose turn it is
         if (pos1 not in self.legal_moves().keys()) or (pos2 not in self.legal_moves()[pos1]):
-            raise Board.InvalidMoveError(pos1, pos2)
+            raise InvalidMoveError(pos1, pos2)
 
-        if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
-            if isinstance(piece1, Pawn) and pos2x != pos1x:
-                raise Board.InvalidPawnDiagonalMove(pos1, pos2)
-            if isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0):  # Pawn promotion implementation
-                self._pawn_promotion(piece1, pos2x, pos2y)
-            # elif castling !!!
-            else:  # regular move
-                self._make_move_to_space(piece1, pos2x, pos2y)
-            self._moves_since_capture += 1  # for checking endgame
-
+        if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty
+            self._make_move_to_space(piece1, pos2[0], pos2[1])  # make a move, promote pawn or castle if needed
         else:  # if the place moving to is not empty;  trying to capture from other team
-            if isinstance(piece1, Pawn) and abs(pos2x - pos1x) != 1:
-                raise Board.InvalidPawnCapturing(pos1, pos2)
-
-            return self._capture_piece(piece1, piece2)
+            return self._capture_piece(piece1, piece2)  # return the captured piece
         return None
+
+    def unmove_piece(self):
+        pass
 
     @Profiler.profile
     def is_piece_in_the_way(self, pos1x: int, pos1y: int, pos2x: int, pos2y: int) -> bool:
@@ -250,19 +255,6 @@ class Board:
                     if self._board[maxy - i - 1][minx + i + 1] is not None:
                         return True
         return False
-        # noinspection PyUnreachableCode
-        """
-        The explanation of how the diagonal works: Say if you wanted to move Queen D1 to A3, which are indices 0,3 to 
-        3,0, the piece would move: (y,x) [(0,3),(1,2),(2,1),(3,0)]. If instead you wanted to move Queen D1 to H5, 0,3 
-        to 4,7, the piece would move: (y,x) [(0,3), (1,4), (2,5), (3,6), (4,7)]. If You wanted to move queen D8 to A5: 
-        7,3 to 4,0: [(7,3), (6,2), (5,1), (4,0)] (y,x). If you wanted to move D8 to H4: 7,3 to 3,7: 
-        [(7,3), (6,4), (5,5), (4,6), (3,7)]. Depending on which way the piece is moving diagonally changes which whether
-        x or y is decreasing or increasing for the positions which need to be checked. So first it determines which way 
-        the piece is moving in the x direction, whether it be to the left or to the right, if it is to the left, the 
-        step is set to -1 so the range function decreases. It adds step to the initial value as it is just position 1 
-        which we know is occupied. It does the exact same thing but for the y direction. It then iterates through all
-        the pieces along the diagonal and adds each individual one to the array in_the_way
-        """
 
     def switch_turn(self):
         """Switches the turn from white to black or black to white. Resets the dictionary for stored legal moves"""
@@ -275,8 +267,6 @@ class Board:
         :param position: A tuple of integers of the indices of the position desired
         :return: A piece object or None if no object is returned
         """
-        if position[0] < 0 or position[1] < 0:
-            raise IndexError("The desired position is out of bounds of the board")
         try:  # ensures the position is actually on the board
             piece = self._board[position[1]][position[0]]
         except IndexError:
@@ -311,15 +301,6 @@ class Board:
         :return: True if the color and turn match up, false if not
         """
         return self._turn == piece.get_color()
-
-    @staticmethod
-    def letter_pos_to_num_pos(position: tuple) -> tuple:
-        """
-        Converts a position like (A,1) to (0,0)
-        :param position: Position you would like convert
-        :return: A tuple with two numbers as position
-        """
-        return ord(position[0]) - 65, position[1] - 1
 
     def get_board(self) -> list:
         """
@@ -408,10 +389,6 @@ class Board:
         """
         return isinstance(piece, Piece) and piece.get_color() == 1
 
-    def castle(self):
-        """perform a castle"""
-        pass
-
     def castling_criteria(self, king, castle_move):
         """Return true if king can castle"""
         # if not isinstance(king, King):
@@ -440,7 +417,7 @@ class Board:
             return False
 
         # check the spaces are empty
-        for x in range(4 + step, rook_x + step, step):  # all squares b/w except the current king square
+        for x in range(4 + step, rook_x, step):  # all squares b/w except the current king square
             if not self.is_position_empty((x, pos1y)):
                 return False
 
@@ -472,21 +449,27 @@ class Board:
                     piece2 = self._board[e2][e1]  # either None or Piece
                     if isinstance(piece2, Piece) and self.validate_turn_color(piece2):  # don't capture same team
                         continue
-                    if (isinstance(piece1, Pawn) and ((isinstance(piece2, Piece) and (e1 - pos1x == 0))
+                    if (isinstance(piece1, Pawn) and ((isinstance(piece2, Piece) and (e1 == pos1x))
                                                       or (not isinstance(piece2, Piece) and abs(e1 - pos1x) == 1))):
                         continue
-                    #if isinstance(piece1, King) and (not self.castling_criteria(e1, e2)):  # only allow regular king moves or castles (need edit) !!!!!!
-                    #    continue
+                    if isinstance(piece1, King) and (abs(e1 - pos1x) == 2) and (not self.castling_criteria(piece1, (e1, e2))):
+                        continue  # continue if trying to castle but can't
                     if isinstance(piece2, King):  # don't add moves that capture the king
                         continue
+
+
                     self.update_pieces(piece1, e1, e2)  # temporarily make the move
                     if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
                         pos2x, pos2y = piece2.get_position()
                         self.update_pieces(piece2, pos2x, pos2y, delete=True)
+
                     self._board[pos1y][pos1x], self._board[e2][e1] = None, self._board[pos1y][pos1x]
                     self.update_move_count()
+
+
                     if not self.is_in_check(self.get_current_turn()):
                         possible_moves[(pos1x, pos1y)].append((e1, e2))
+
                     self.update_pieces(piece1, pos1x, pos1y, revert=True)  # unmake the temporary move
                     if isinstance(piece2, Piece):  # add back piece to dict if necessary
                         pos2x, pos2y = piece2.get_position()
@@ -522,13 +505,12 @@ class Board:
         :param color: 1 or -1 for white or black respectively
         :return: Tuple of the position of the king of specified color
         """
+        # return [pos for piece, pos in self._pieces_left[color].items() if isinstance(piece, King)][0]
         consider = self._pieces_left[color].items()
         for piece, pos in consider:
             if isinstance(piece, King):
                 return pos
-
-        # return [pos for piece, pos in self._pieces_left[color].items() if isinstance(piece, King)][0]
-        raise Board.NoKing("In get_king_positions. No king found of color: {c}".format(c=color))
+        raise NoKingError(color)
 
     def is_game_over(self):
         """

@@ -212,8 +212,7 @@ class King(Piece):
         self._name = 'king'
 
     def king_castling(self, new_xpos, new_ypos):
-        return False
-        #return (not self.get_was_moved()) and (abs(new_xpos - self._xpos == 2)) and (new_ypos == self._ypos)
+        return (not self.get_was_moved()) and (abs(new_xpos - self._xpos) == 2) and (new_ypos == self._ypos)
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
