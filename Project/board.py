@@ -1,10 +1,10 @@
-
 # board.py: defines the board object
 
 from pieces import *
 from typing import Union
 import collections
 from profiler import Profiler
+from all_moves import all_positions
 
 
 class Board:
@@ -42,13 +42,10 @@ class Board:
         self._captured = list()
         self._game_over = False  # change when checkmate happens
         self._moves_since_capture = 0
-        self._white_king_position = (4, 0)  # x, y indices of the white king
-        self._black_king_position = (4, 7)  # x, y indices of the black king
         self._legal_moves = {}  # dictionary to temporarily store legal moves
 
-        # dictionaries to store references to the piece objects (key=object, val = position tuple)
-        self._white_pieces = {}
-        self._black_pieces = {}
+        # store references to the piece objects {key=color, value={key=piece, val=pos}}
+        self._pieces_left = collections.defaultdict(dict)
 
     def start_game(self):
         """
@@ -73,13 +70,10 @@ class Board:
         self._game_over = False
 
         # initialize self._white_pieces and self._black_pieces
-        for i in range(0, 8):
-            for j in range(0, 8):
-                if isinstance(self._board[i][j], Piece):
-                    if self._board[i][j].get_color() == 1:
-                        self._white_pieces[self._board[i][j]] = self._board[i][j].get_position()
-                    elif self._board[i][j].get_color() == -1:
-                        self._black_pieces[self._board[i][j]] = self._board[i][j].get_position()
+        for j, i in all_positions:  # iterate over all positions
+            if isinstance(self._board[i][j], Piece):
+                p = self._board[i][j]
+                self._pieces_left[p.get_color()][p] = p.get_position()
 
     def get_pieces_left(self, color: int) -> dict:
         """
@@ -88,10 +82,7 @@ class Board:
         :return: A dictionary of all of the pieces of a certain color, the key is the piece object and value is a
         position as a tuple
         """
-        if color == 1:
-            return self._white_pieces
-        elif color == -1:
-            return self._black_pieces
+        return self._pieces_left[color]
 
     @Profiler.profile
     def update_pieces(self, piece: Piece, xpos: int, ypos: int, revert=False, delete=False, adding=False):
@@ -106,17 +97,11 @@ class Board:
         """
 
         if adding:
-            if piece.get_color() == 1:
-                self._white_pieces[piece] = piece.get_position()
-            elif piece.get_color() == -1:
-                self._black_pieces[piece] = piece.get_position()
+            self._pieces_left[piece.get_color()][piece] = piece.get_position()
             return 0
 
         if delete:
-            if piece.get_color() == 1:
-                self._white_pieces.pop(piece)
-            elif piece.get_color() == -1:
-                self._black_pieces.pop(piece)
+            self._pieces_left[piece.get_color()].pop(piece)
             self._captured.append(piece)
             return 0
 
@@ -125,12 +110,7 @@ class Board:
         else:
             piece.move(xpos, ypos)
 
-        if piece.get_color() == 1:
-            p = piece.get_position()
-            self._white_pieces[piece] = p
-        elif piece.get_color() == -1:
-            p = piece.get_position()
-            self._black_pieces[piece] = p
+        self._pieces_left[piece.get_color()][piece] = piece.get_position()
 
     def _start_test_game(self):
         """
@@ -150,13 +130,12 @@ class Board:
         self._move_count = 0
         self._game_over = False
         self._board = b
-        for i in range(0, 8):
-            for j in range(0, 8):
-                if isinstance(self._board[i][j], Piece):
-                    if self._board[i][j].get_color() == 1:
-                        self._white_pieces[self._board[i][j]] = self._board[i][j].get_position()
-                    elif self._board[i][j].get_color() == -1:
-                        self._black_pieces[self._board[i][j]] = self._board[i][j].get_position()
+
+        # initialize self._white_pieces and self._black_pieces
+        for j, i in all_positions:  # iterate over all positions
+            if isinstance(self._board[i][j], Piece):
+                p = self._board[i][j]
+                self._pieces_left[p.get_color()][p] = p.get_position()
 
     @Profiler.profile
     def move_piece(self, pos1: tuple, pos2: tuple) -> Union[Piece, None]:
@@ -168,6 +147,8 @@ class Board:
         """
         pos1x, pos1y = pos1
         pos2x, pos2y = pos2
+        piece1 = self.get_piece_from_position(pos1)  # can be piece or none
+        piece2 = self.get_piece_from_position(pos2)  # can be piece or none
 
         if pos2 not in self.legal_moves()[pos1]:
             raise Board.InvalidMoveError("The move from {pos1} to {pos2} is not in the board legal moves list".format(
@@ -175,7 +156,6 @@ class Board:
 
         if self.is_position_empty(pos1):  # Trying to move a piece at a position that has no piece
             raise Board.EmptySpaceError("The space at {pos} is empty".format(pos=pos1))
-        piece1 = self.get_piece_from_position(pos1)
 
         if not self.validate_turn_color(piece1):  # Checks to see if it is that pieces turn
             raise Board.WrongTeamError("It is team {t1}'s turn, tried to move piece "
@@ -186,13 +166,12 @@ class Board:
             raise Board.PieceInTheWayError("There is(are) a piece(s) in between where you are and where you would"
                                            " like to move")
 
-        piece2 = self.get_piece_from_position(pos2)
-
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty it just moves
             if isinstance(piece1, Pawn) and pos2x != pos1x:  # sets pawn piece capture to false
                 raise Board.InvalidPawnMove("Trying to move the pawn from {pos1} to {pos2}, which is diagonal but the"
                                             "pawn is not capturing".format(pos1=pos1, pos2=pos2))
-            if not (isinstance(piece1, Pawn) and (pos2y == 7 or pos2y == 0)):  # regular move, makes sure a pawn doesn't have to be promoted
+            if not (isinstance(piece1, Pawn) and (
+                    pos2y == 7 or pos2y == 0)):  # regular move, makes sure a pawn doesn't have to be promoted
                 self.update_pieces(piece1, pos2x, pos2y)  # piece1.move(pos2x, pos2y)
                 self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, piece2
                 self.update_move_count()
@@ -441,8 +420,8 @@ class Board:
                     piece2 = self._board[e2][e1]  # either None or Piece
                     if isinstance(piece2, Piece) and self.validate_turn_color(piece2):  # don't capture same team
                         continue
-                    if (isinstance(piece1, Pawn) and ((isinstance(piece2, Piece) and (e1-pos1x == 0))
-                                                      or (not isinstance(piece2, Piece) and abs(e1-pos1x) == 1))):
+                    if (isinstance(piece1, Pawn) and ((isinstance(piece2, Piece) and (e1 - pos1x == 0))
+                                                      or (not isinstance(piece2, Piece) and abs(e1 - pos1x) == 1))):
                         continue
                     if isinstance(piece2, King):  # don't add moves that capture the king
                         continue
@@ -489,19 +468,12 @@ class Board:
         :param color: 1 or -1 for white or black respectively
         :return: Tuple of the position of the king of specified color
         """
-        if color == 1:
-            piece = self.get_piece_from_position(self._white_king_position)
-            if isinstance(piece, King) and piece.get_color() == color:
-                return self._white_king_position
-            else:
-                return self._white_pieces[[p for p in self._white_pieces.keys() if isinstance(p, King)][0]]
-        elif color == -1:
-            piece = self.get_piece_from_position(self._black_king_position)
-            if isinstance(piece, King) and piece.get_color() == color:
-                return self._black_king_position
-            else:
-                return self._black_pieces[[p for p in self._black_pieces.keys() if isinstance(p, King)][0]]
+        consider = self._pieces_left[color].items()
+        for piece, pos in consider:
+            if isinstance(piece, King):
+                return pos
 
+        # return [pos for piece, pos in self._pieces_left[color].items() if isinstance(piece, King)][0]
         raise Board.NoKing("In get_king_positions. No king found of color: {c}".format(c=color))
 
     def is_game_over(self):

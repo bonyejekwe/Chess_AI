@@ -217,7 +217,7 @@ class Node:
 
     def select_node(self):
         """Choose a node using the selection policy formula"""
-        c = 4000000
+        c = 4000
         lis = []
         for n in self.children:
             if n.visits == 0:
@@ -278,7 +278,7 @@ class MCTSAI(AI):
         """Best action"""
         counter = {}
         for n in node.children:
-            print(n.samples)
+            print(n.move, n.samples)
             if len(n.samples) == 0:
                 sample = 0
             else:
@@ -299,47 +299,44 @@ class MCTSAI(AI):
         best = [move for move, val in lis if val == v]
         return random.choice(best)
 
-    def simulate(self, board, first_act):
-        """simulate with a copy of the board"""
-        if board.is_game_over():
-            return board.winner()
-
-        # random move on the board
-        moves = AI.format_legal_moves(board)
-        move = random.choice(moves)
-
-        # make move on the board  ( note: don't make deepcopy each time!!!!)
-        piece1, piece2 = board.get_piece_from_position(move[0]), board.get_board()[move[1][1]][move[1][0]]
-        pos1x, pos1y, pos2x, pos2y = move[0][0], move[0][1], move[1][0], move[1][1]
-        board.update_pieces(piece1, pos2x, pos2y)
-        if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
-            board.update_pieces(piece2, pos2x, pos2y, delete=True)
-        board.get_board()[pos1y][pos1x], board.get_board()[pos2y][pos2x] = None, board.get_board()[pos1y][
-            pos1x]
-        board.update_move_count()
-        board.switch_turn()
-
-        # recursive call till game over
-        return self.simulate(board, first_act)
-
-    def simulation(self, node):
+    def simulation(self, node, t):
         """Run a simulation, return a resulting score"""
-        b = copy.deepcopy(node.board)
-        return self.simulate(b, node.first_move)
+        b = copy.deepcopy(node.board)  # single deep copy for a simulation
+        print('6.5', time.time() - t)
+
+        while not b.is_game_over():
+            # random move on the board
+            moves = AI.format_legal_moves(b)
+            move = random.choice(moves)
+
+            # make move on the board
+            b.move_piece(move[0], move[1])
+            b.update_move_count()
+            b.switch_turn()
+        print('6.75', time.time() - t)
+        return b.winner()
 
     def mcts(self, board: Board):
         start = time.time()
+        print('1', time.time() - start)
         root = Node(board, None, None, None)
+        print('2', time.time() - start)
         root.expand_node()
+        print('3', time.time() - start)
         i = 0
         while time.time() - start < 5:  # 0.9 seconds
             n = root
+            print('4', time.time() - start)
             while not n.is_leaf_node():
                 n = n.select_node()
+            print('5', time.time() - start)
             if n.visits != 0:  # if leaf node not visited yet, then expand it
                 n = n.expand_node()
-            result = self.simulation(n)
+            print('6', time.time() - start)
+            result = self.simulation(n, start)
+            print('7', time.time() - start)
             n.backpropogate(result)
+            print('8', time.time() - start)
             i += 1
         print(i)
         return self.best_board(root)
