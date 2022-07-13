@@ -21,7 +21,7 @@ class AI:
         self._legal_moves = []
 
     @staticmethod
-    @Profiler.profile
+    # @Profiler.profile
     def scoring(board: Board, color: int) -> int:
         """
         Generalized scoring system: score is positive if white is winning and negative if black
@@ -311,7 +311,6 @@ class MCTSAI(AI):
 
             # make move on the board
             b.move_piece(move[0], move[1])
-            b.update_move_count()
             b.switch_turn()
         print('6.75', time.time() - t)
         return b.winner()

@@ -194,7 +194,7 @@ class PlayGame:
 
         for x, y in all_positions:  # iterate over all_positions
             if isinstance(brd[x][y], Piece):  # Check that the element is a piece
-                piece_type = str(brd[x][y])[0]  # Find the piece type
+                piece_type = str(brd[x][y]).upper()  # Find the piece type
                 piece_color = brd[x][y].get_color()  # 1 is white and -1 is black
 
                 # Draw the respective piece

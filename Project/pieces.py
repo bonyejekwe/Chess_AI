@@ -61,7 +61,6 @@ class Piece:
             self._xpos = new_xpos
             self._ypos = new_ypos
             self.num_moves += 1
-            # self._piece_legal_moves = 0
         else:
             raise InvalidMoveError(new_xpos, new_ypos)
 
@@ -69,14 +68,12 @@ class Piece:
     def legal_moves(self):
         """Returns a list of legal moves for that piece based only on the restrictions for the piece type itself
         Inherited by all of the pieces to evaluate each piece's respective criteria"""
-        # if self._piece_legal_moves == 0:
-        #    self._piece_legal_moves = self._all_legal_moves[self._name][self._ypos][self._xpos]
-        # return self._piece_legal_moves
         return self._all_legal_moves[self._name][self._ypos][self._xpos]
 
+    # @Profiler.profile
     def can_move_to(self, new_xpos, new_ypos):
         """Return true if piece can move to (new_xpos, new_ypos), false otherwise"""
-        return (new_xpos, new_ypos) in self.legal_moves()
+        return (new_xpos, new_ypos) in self._all_legal_moves[self._name][self._ypos][self._xpos]  # self.legal_moves()
 
     def revert(self, last_xpos, last_ypos):
         """revert a piece back to its previous position (new_xpos, new_ypos). Decrement the was_moved variable"""
@@ -92,7 +89,6 @@ class Pawn(Piece):
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
         self._worth = 1
-        #self._is_capturing = False
         if color == 1:
             self._name = 'white_pawn'
         else:
@@ -101,17 +97,6 @@ class Pawn(Piece):
     def pawn_first_move(self, new_xpos, new_ypos):
         """Returns true if pawn is trying to move 2 spaces for first move"""
         return (not self.get_was_moved()) and (new_ypos - self._ypos == 2 * self._color) and (new_xpos == self._xpos)
-
-    #def is_capturing(self):
-    #    """:return true if the pawn is capturing"""
-    #    return self._is_capturing
-
-    #def set_capturing(self, status):
-    #    """
-    #    Set the capturing variable for the pawn object
-    #    :param status determines whether the pawn is currently capturing or not
-    #    """
-    #    self._is_capturing = status  # True or False
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
@@ -123,7 +108,7 @@ class Pawn(Piece):
         if self.get_color() == 1:
             return "P"
         else:
-            return "P'"
+            return "p"
 
 
 class Knight(Piece):
@@ -143,7 +128,7 @@ class Knight(Piece):
         if self.get_color() == 1:
             return "N"
         else:
-            return "N'"
+            return "n"
 
 
 class Bishop(Piece):
@@ -162,7 +147,7 @@ class Bishop(Piece):
         if self.get_color() == 1:
             return "B"
         else:
-            return "B'"
+            return "b"
 
 
 class Rook(Piece):
@@ -181,7 +166,7 @@ class Rook(Piece):
         if self.get_color() == 1:
             return "R"
         else:
-            return "R'"
+            return "r"
 
 
 class Queen(Piece):
@@ -201,7 +186,7 @@ class Queen(Piece):
         if self.get_color() == 1:
             return "Q"
         else:
-            return "Q'"
+            return "q"
 
 
 class King(Piece):
@@ -223,7 +208,7 @@ class King(Piece):
         if self.get_color() == 1:
             return "K"
         else:
-            return "K'"
+            return "k"
 
 ## Need to redo the criteria to redo the all-legal-moves-dict!!!
 

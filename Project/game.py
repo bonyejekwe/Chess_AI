@@ -10,6 +10,15 @@ from AI import AI
 from profiler import Profiler
 
 
+def letter_pos_to_num_pos(position: tuple) -> tuple:
+    """
+    Converts a position like (A,1) to (0,0)
+    :param position: Position you would like convert
+    :return: A tuple with two numbers as position
+    """
+    return ord(position[0]) - 65, position[1] - 1
+
+
 def main():
     winners = []
     for _ in range(1):
@@ -94,5 +103,8 @@ def move(game: Board, game_ai: AI, game_ai2=False):
             move(game, game_ai, game_ai2)
 
 
+
+
 if __name__ == "__main__":
     main()
+

@@ -31,11 +31,12 @@ class Board:
         self._board = list()
         self._move_count = 0
         self._turn = 1  # sets the turn to white
-        self._captured = list()
         self._game_over = False  # change when checkmate happens
-        self._moves_since_capture = 0
         self._legal_moves = {}  # dictionary to temporarily store legal moves
-        self._last_move = []
+        self._moves_list = []
+        self._captured_pieces = []
+        self._promoted_pawns = []
+        self._moves_since_capture_list = []
 
         # store references to the piece objects {key=color, value={key=piece, val=pos}}
         self._pieces_left = collections.defaultdict(dict)
@@ -56,7 +57,6 @@ class Board:
         self._board.append(black_pawns)
         self._board.append(black_back_row)
         self._turn = 1  # sets the turn to white
-        self._moves_since_capture = 0
         self._move_count = 0
         self._game_over = False
 
@@ -92,7 +92,6 @@ class Board:
 
         if delete:
             self._pieces_left[piece.get_color()].pop(piece)
-            self._captured.append(piece)
             return 0
 
         if revert:
@@ -112,7 +111,6 @@ class Board:
         b[7][7] = King(7, 7, -1)
 
         self._turn = 1  # sets the turn to white
-        self._moves_since_capture = 0
         self._move_count = 0
         self._game_over = False
         self._board = b
@@ -123,67 +121,128 @@ class Board:
                 p = self._board[i][j]
                 self._pieces_left[p.get_color()][p] = p.get_position()
 
+    def get_moves_since_capture(self):
+        """Get number of moves since the last capture"""
+        i = 0
+        for b in self._moves_since_capture_list[::-1]:
+            if b:  # if b is True
+                return i
+            i += 1
+        return i
+
     def _pawn_promotion(self, pawn: Pawn, pos2x: int, pos2y: int):
         """
         Promote a pawn by replacing it with a queen
         :return deleted pawn
         """
         self.update_pieces(pawn, pos2x, pos2y, delete=True)  # delete the pawn
-        piece1 = Queen(pos2x, pos2y, pawn.get_color())
-        self.update_pieces(piece1, pos2x, pos2y, adding=True)  # add the queen
-        return pawn
+        queen = Queen(pos2x, pos2y, pawn.get_color())
+        self.update_pieces(queen, pos2x, pos2y, adding=True)  # add the queen
+        return queen
 
-    def castle(self, king, rook, direc):
+    def _castle(self, king, pos2x):
         """Castle"""
-        king_pos = king.get_position()
-        pos1x, pos1y = rook.get_position()
-        pos2x, pos2y,  = king_pos[0] - direc, king_pos[1]
-        self._board[pos2y][pos2x], self._board[pos1y][pos1x] = rook, None
+        pos1x, pos2y = king.get_position()  # king has same ypos (pos1y == pos2y)
+        if pos2x == 2:  # queen-side castle
+            pos1x, pos2x = 0, 3  # old rook x and new rook x
+        else:  # king-side castle (pos2x == 6)
+            pos1x, pos2x = 7, 5  # old rook x and new rook x
+
+        rook = self.get_piece_from_position((pos1x, pos2y))
+        self._board[pos2y][pos2x], self._board[pos2y][pos1x] = rook, None
         self.update_pieces(rook, pos2x, pos2y)
 
-    def _make_move_to_space(self, piece: Piece, pos2x: int, pos2y: int) -> Union[Piece, None]:
+    def _move_to_space(self, piece: Piece, pos2x: int, pos2y: int):
         """
         make move on board
         :return deleted pawn if it was promoted, None otherwise
         """
         pos1x, pos1y = piece.get_position()
-        self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece, None
-        self.update_pieces(piece, pos2x, pos2y)
-        self.update_move_count()
-        self._moves_since_capture += 1  # for checking endgame
-
         if isinstance(piece, Pawn) and (pos2y == 0 or pos2y == 7):
-            pawn = self._pawn_promotion(piece, pos2x, pos2y)
-            return pawn
-        elif isinstance(piece, King) and (abs(pos2x - pos1x) == 2):
-            # rook_map = {2: 0, 6: 7}  # map the x_val
-            if pos2x == 2:
-                rook_x = 0
-                step = -1
-            elif pos2x == 6:
-                rook_x = 7
-                step = 1
-            # need to check this
-            rook = self.get_piece_from_position((rook_x, pos2y))
-            self.castle(piece, rook, step)
+            self._promoted_pawns.append(piece)
+            piece = self._pawn_promotion(piece, pos2x, pos2y)  # queen
+        else:
+            self._promoted_pawns.append(None)
+            self.update_pieces(piece, pos2x, pos2y)
 
-        return None
+        self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece, None
+        self.update_move_count()
+        self._moves_since_capture_list.append(False)
+
+        if isinstance(piece, King) and (abs(pos2x - pos1x) == 2):
+            self._castle(piece, pos2x)
+
+        self._captured_pieces.append(None)
 
     def _capture_piece(self, piece1, piece2):
         """capture piece2 with piece1"""
         pos1x, pos1y = piece1.get_position()
         pos2x, pos2y = piece2.get_position()
+        if isinstance(piece1, Pawn) and (pos2y == 0 or pos2y == 7):  # Pawn promotion after capture
+            self._promoted_pawns.append(piece1)
+            piece1 = self._pawn_promotion(piece1, pos2x, pos2y)  # queen
+        else:
+            self._promoted_pawns.append(None)
+            self.update_pieces(piece1, pos2x, pos2y)
+
         self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # update positions on the board
-        self.update_pieces(piece1, pos2x, pos2y)  # moves piece to new position
         self.update_pieces(piece2, pos2x, pos2y, delete=True)  # delete captured piece
         self.update_move_count()
-        self._moves_since_capture = 0  # for checking endgame
+        self._moves_since_capture_list.append(True)
+        self._captured_pieces.append(piece2)
 
-        if isinstance(piece1, Pawn) and (pos2y == 0 or pos2y == 7):  # Pawn promotion after capture
-            pawn = self._pawn_promotion(piece1, pos2x, pos2y)
-            return pawn  # TODO: fix, should return both captured piece and replaced pawn!!!!!!
+    def _undo_promotion(self, pawn, queen, pos1):
+        pos1x, pos1y = pos1
+        pos2x, pos2y = queen.get_position()
+        self.update_pieces(queen, pos2x, pos2y, delete=True)  # delete the queen
+        self.update_pieces(pawn, pos1x, pos1y, adding=True)  # add the pawn
+        return pawn
 
-        return piece2  # returns the piece captured
+    def undo_castle(self, king, pos2x):
+        """Undo_castle"""
+        pos1x, pos2y = king.get_position()  # king has same ypos (pos1y == pos2y)
+        if pos2x == 2:  # was queen-side castle
+            pos1x, pos2x = 0, 3  # old rook x and new rook x
+        else:  # was king-side castle (pos2x == 6)
+            pos1x, pos2x = 7, 5  # old rook x and new rook x
+
+        rook = self.get_piece_from_position((pos2x, pos2y))
+        self._board[pos2y][pos2x], self._board[pos2y][pos1x] = None, rook
+        self.update_pieces(rook, pos1x, pos2y)  # = (pos1x, pos1y)
+
+    def _undo_move_to_space(self, piece: Piece, pos1, promoted):
+        """
+        make move on board
+        :return deleted pawn if it was promoted, None otherwise
+        """
+        pos1x, pos1y = pos1
+        pos2x, pos2y = piece.get_position()
+        if isinstance(promoted, Pawn):  # need to undo promote (piece is queen):
+            piece = self._undo_promotion(promoted, piece, pos1)  # pawn
+        else:
+            self.update_pieces(piece, pos1x, pos1y, revert=True)
+
+        self._board[pos2y][pos2x], self._board[pos1y][pos1x] = None, piece
+        self.update_move_count(False)
+        self._moves_since_capture_list.pop()
+
+        if isinstance(piece, King) and (abs(pos2x - pos1x) == 2):
+            self.undo_castle(piece, pos2x)
+
+    def _undo_capture_piece(self, piece1, captured_piece, pos1, promoted):
+        """undo capture piece2 with piece1"""
+        pos1x, pos1y = pos1
+        pos2x, pos2y = piece1.get_position()  # = captured_piece.get_position()  # piece1=queen
+
+        if isinstance(promoted, Pawn):  # need to undo promote
+            piece1 = self._undo_promotion(promoted, piece1, pos1)  # pawn
+        else:
+            self.update_pieces(piece1, pos1x, pos1y, revert=True)  # moves piece to new position
+
+        self._board[pos2y][pos2x], self._board[pos1y][pos1x] = captured_piece, piece1  # update positions on the board
+        self.update_pieces(captured_piece, pos2x, pos2y, adding=True)  # add captured piece
+        self.update_move_count(False)
+        self._moves_since_capture_list.pop()
 
     @Profiler.profile
     def move_piece(self, pos1: tuple, pos2: tuple) -> Union[Piece, None]:
@@ -200,16 +259,29 @@ class Board:
         if (pos1 not in self.legal_moves().keys()) or (pos2 not in self.legal_moves()[pos1]):
             raise InvalidMoveError(pos1, pos2)
 
+        self._moves_list.append((pos1, pos2))  # add move to list of moves
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty
-            self._make_move_to_space(piece1, pos2[0], pos2[1])  # make a move, promote pawn or castle if needed
-        else:  # if the place moving to is not empty;  trying to capture from other team
-            return self._capture_piece(piece1, piece2)  # return the captured piece
-        return None
+            self._move_to_space(piece1, pos2[0], pos2[1])  # make a move, promote pawn or castle if needed
+        else:  # if the place moving to is not empty; capturing from other team
+            self._capture_piece(piece1, piece2)  # return the captured piece
+        return
 
-    def unmove_piece(self):
-        pass
+    def undo_move(self):
+        """Unmake the last move (pos1, pos2) from the board"""
+        pos1, pos2 = self._moves_list.pop()  # get the last move
+        pos1x, pos1y = pos1
+        pos2x, pos2y = pos2
+        piece1 = self.get_piece_from_position(pos2)
 
-    @Profiler.profile
+        captured_piece = self._captured_pieces.pop()
+        promoted = self._promoted_pawns.pop()
+
+        if captured_piece is None:  # a move to space:
+            self._undo_move_to_space(piece1, pos1, promoted)
+        else:
+            self._undo_capture_piece(piece1, captured_piece, pos1, promoted)
+
+    # @Profiler.profile
     def is_piece_in_the_way(self, pos1x: int, pos1y: int, pos2x: int, pos2y: int) -> bool:
         """
         Checks if there are any pieces in the way between two different positions on the board
@@ -261,7 +333,7 @@ class Board:
         self._turn *= -1
         self._legal_moves = {}
 
-    def get_piece_from_position(self, position: tuple) -> Piece:
+    def get_piece_from_position(self, position: tuple) -> Union[Piece, None]:
         """
         Returns a piece object or none from the board, raises error if the desired piece is neither a piece or empty
         :param position: A tuple of integers of the indices of the position desired
@@ -310,7 +382,7 @@ class Board:
 
     def get_captured(self) -> list:
         """:return: The list of captured items"""
-        return self._captured
+        return self._captured_pieces
 
     def get_current_turn(self) -> int:
         """:return: The integer representing who's turn it is (1 is white, -1 is black)"""
@@ -402,14 +474,13 @@ class Board:
 
         # find the corresponding rook
         pos2x, pos2y = castle_move
-        rook_map = {2: 0, 6: 7}  # map the x_val
-        if pos2x == 2:
+        if pos2x == 2:  # queen-side castle
             rook_x = 0
             step = -1
-        elif pos2x == 6:
+        else:  # king-side castle (pos2x == 6)
             rook_x = 7
             step = 1
-        # need to check this
+        # TODO need to check this
 
         r = self.get_piece_from_position((rook_x, pos2y))
         # check that corresponding rook wasn't moved
@@ -457,7 +528,6 @@ class Board:
                     if isinstance(piece2, King):  # don't add moves that capture the king
                         continue
 
-
                     self.update_pieces(piece1, e1, e2)  # temporarily make the move
                     if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
                         pos2x, pos2y = piece2.get_position()
@@ -465,7 +535,6 @@ class Board:
 
                     self._board[pos1y][pos1x], self._board[e2][e1] = None, self._board[pos1y][pos1x]
                     self.update_move_count()
-
 
                     if not self.is_in_check(self.get_current_turn()):
                         possible_moves[(pos1x, pos1y)].append((e1, e2))
@@ -521,7 +590,7 @@ class Board:
         if len(self.legal_moves()) == 0:
             print('game over')
             self._game_over = True
-        elif self._moves_since_capture > 49:
+        elif self.get_moves_since_capture() > 49:
             print('draw (50 move rule)')
             self._game_over = True
         elif self._move_count > 200:
