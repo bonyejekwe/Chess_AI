@@ -198,8 +198,8 @@ class Board:
         self.update_pieces(pawn, pos1x, pos1y, adding=True)  # add the pawn
         return pawn
 
-    def undo_castle(self, king, pos2x):
-        """Undo_castle"""
+    def _undo_castle(self, king, pos2x):
+        """Undo_castle, put the rook back"""
         pos1x, pos2y = king.get_position()  # king has same ypos (pos1y == pos2y)
         if pos2x == 2:  # was queen-side castle
             pos1x, pos2x = 0, 3  # old rook x and new rook x
@@ -208,7 +208,7 @@ class Board:
 
         rook = self.get_piece_from_position((pos2x, pos2y))
         self._board[pos2y][pos2x], self._board[pos2y][pos1x] = None, rook
-        self.update_pieces(rook, pos1x, pos2y)  # = (pos1x, pos1y)
+        self.update_pieces(rook, pos1x, pos2y, revert=True)  # = (pos1x, pos1y)\
 
     def _undo_move_to_space(self, piece: Piece, pos1, promoted):
         """
@@ -227,7 +227,7 @@ class Board:
         self._moves_since_capture_list.pop()
 
         if isinstance(piece, King) and (abs(pos2x - pos1x) == 2):
-            self.undo_castle(piece, pos2x)
+            self._undo_castle(piece, pos2x)
 
     def _undo_capture_piece(self, piece1, captured_piece, pos1, promoted):
         """undo capture piece2 with piece1"""
@@ -245,19 +245,21 @@ class Board:
         self._moves_since_capture_list.pop()
 
     @Profiler.profile
-    def move_piece(self, pos1: tuple, pos2: tuple) -> Union[Piece, None]:
+    def move_piece(self, pos1: tuple, pos2: tuple, check=True) -> Union[Piece, None]:
         """
         Moves a piece from one position to another, checking the legality and correctness of the move
         :param pos1: A tuple containing int positions for x and y. Current Position
         :param pos2: A tuple containing int positions for x and y. Desired Position
+        :param check: whether should check if in legal moves (can make False if only making move from legal moves)
         :return: The piece captured, or None if no piece is captured
         """
         piece1 = self.get_piece_from_position(pos1)  # can be piece or none
         piece2 = self.get_piece_from_position(pos2)  # can be piece or none
 
         # Note: legal moves shows all possible moves for the team whose turn it is
-        if (pos1 not in self.legal_moves().keys()) or (pos2 not in self.legal_moves()[pos1]):
-            raise InvalidMoveError(pos1, pos2)
+        if check:
+            if (pos1 not in self.legal_moves().keys()) or (pos2 not in self.legal_moves()[pos1]):
+                raise InvalidMoveError(pos1, pos2)
 
         self._moves_list.append((pos1, pos2))  # add move to list of moves
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty
@@ -278,7 +280,7 @@ class Board:
 
         if captured_piece is None:  # a move to space:
             self._undo_move_to_space(piece1, pos1, promoted)
-        else:
+        else:  # a capture
             self._undo_capture_piece(piece1, captured_piece, pos1, promoted)
 
     # @Profiler.profile

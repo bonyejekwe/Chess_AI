@@ -138,25 +138,15 @@ class MinimaxAI(AI):
         m_eval = -10000 * min_or_max  # large negative if same (maximizing), large positive if different (minimizing)
         for move in moves:
             # make the move on the board
-            piece1, piece2 = board.get_piece_from_position(move[0]), board.get_board()[move[1][1]][move[1][0]]
-            pos1x, pos1y, pos2x, pos2y = move[0][0], move[0][1], move[1][0], move[1][1]
-            board.update_pieces(piece1, pos2x, pos2y)
-            if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
-                board.update_pieces(piece2, pos2x, pos2y, delete=True)
-            board.get_board()[pos1y][pos1x], board.get_board()[pos2y][pos2x] = None, board.get_board()[pos1y][pos1x]
-            board.update_move_count()
+            board.move_piece(move[0], move[1], check=False)
             board.switch_turn()
 
             # make a recursive call to minimax to find the best evaluation at a specified depth
             curr_eval = self.minimax(board, depth - 1, -1 * maximizing_player, maximizing_color)[1]
 
             # unmake the move on the board
+            board.undo_move()
             board.switch_turn()
-            board.update_pieces(piece1, pos1x, pos1y, revert=True)  # unmake the temporary move
-            if isinstance(piece2, Piece):  # add back piece to dict if necessary
-                board.update_pieces(piece2, pos2x, pos2y, adding=True)
-            board.get_board()[pos1y][pos1x], board.get_board()[pos2y][pos2x] = board.get_board()[pos2y][pos2x], piece2
-            board.update_move_count(False)
 
             # update the best found move and score if necessary
             if min_or_max == 1:
@@ -192,6 +182,11 @@ class MinimaxAI(AI):
         start_pos, end_pos = self.minimax(board, self.max_depth, 1, self._team)[0]  # minimax
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
+        board.switch_turn()
+        king = board.get_piece_from_position(board.get_king_position(board.get_current_turn()))
+        print('qs', board.castling_criteria(king, (2, 0)))
+        print('ks', board.castling_criteria(king, (6, 0)))
+        board.switch_turn()
         print(board)
 
 
