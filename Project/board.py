@@ -410,11 +410,9 @@ class Board:
         for letter in alphabet:
             string += "{:>8}".format(letter)
         string += "\n\n"
-        num = 1
-        for i in self._board:
-            string += str(num)
-            num += 1
-            for j in i:
+        for i in range(7, -1, -1):
+            string += str(i)
+            for j in self._board[i]:  # each row
                 string += "{:>8}".format(str(j))
             string += "\n"
         return string

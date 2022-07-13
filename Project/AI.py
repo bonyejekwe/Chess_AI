@@ -182,11 +182,6 @@ class MinimaxAI(AI):
         start_pos, end_pos = self.minimax(board, self.max_depth, 1, self._team)[0]  # minimax
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
-        board.switch_turn()
-        king = board.get_piece_from_position(board.get_king_position(board.get_current_turn()))
-        print('qs', board.castling_criteria(king, (2, 0)))
-        print('ks', board.castling_criteria(king, (6, 0)))
-        board.switch_turn()
         print(board)
 
 
