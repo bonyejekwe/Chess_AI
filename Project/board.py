@@ -22,27 +22,20 @@ class InvalidMoveError(Exception):
 class Board:
 
     def __init__(self):
-        """
-        board is 2d array of pieces and None objects. White is at the top, black is at the bottom so we can index the
-        array easier. Because of this the board is upside down and flipped down the middle. Minor details.
-        A1 is 0,0. H8 is 7,7
-        Move count is number of moves
-        """
+        """A board is a 2D array of pieces and None objects. White pieces start at the beginning of the array. A1 is
+        indexed at (0, 0) and H8 is indexed at (7, 7). Move count stores the number of moves"""
         self._board = []
         self._move_count = 0
         self._turn = 1  # sets the turn to white
-        self._game_over = False  # change when checkmate happens
         self._legal_moves = {}  # dictionary to temporarily store legal moves
         self._moves_list = []
         self._captured_pieces = []
         self._promoted_pawns = []
         self._moves_since_capture_list = []
-
-        # store references to the piece objects {key=color, value={key=piece, val=pos}}
-        self._pieces_left = collections.defaultdict(dict)
+        self._pieces_left = collections.defaultdict(dict)  # piece references {key=color, val={key=piece, val=pos}}
 
     def start_game(self):
-        """Starts game, fills in all pieces in the standard starting"""
+        """Starts a standard chess game, initializes the board with pieces"""
         white_back_row = [Rook(0, 0, 1), Knight(1, 0, 1), Bishop(2, 0, 1), Queen(3, 0, 1), King(4, 0, 1),
                           Bishop(5, 0, 1), Knight(6, 0, 1), Rook(7, 0, 1)]
         white_pawns = [Pawn(i, 1, 1) for i in range(8)]
@@ -56,9 +49,26 @@ class Board:
             self._board.append(row)
         self._board.append(black_pawns)
         self._board.append(black_back_row)
+
+        # iterate over all positions and initialize self._pieces_left with each piece
+        for j, i in all_positions:
+            if isinstance(self._board[i][j], Piece):
+                p = self._board[i][j]
+                self._pieces_left[p.get_color()][p] = p.get_position()
+
+    def _start_test_game(self):
+        """Starts a game for testing piece movement and game logic. (Testing purposes only!!!)"""
+        self._board = [[King(0, 0, 1), None, None, None, None, None, None, None],
+                       [None, None, None, None, None, None, None, None],
+                       [None, None, None, None, None, None, None, None],
+                       [None, None, None, None, None, None, None, None],
+                       [None, None, None, None, None, None, None, None],
+                       [None, None, None, None, None, None, Pawn(6, 5, 1), None],
+                       [None, None, None, None, None, None, None, None],
+                       [Bishop(0, 7, -1), None, None, None, None, None, None, King(7, 7, -1)]]
+
         self._turn = 1  # sets the turn to white
         self._move_count = 0
-        self._game_over = False
 
         # initialize self._white_pieces and self._black_pieces
         for j, i in all_positions:  # iterate over all positions
@@ -69,57 +79,36 @@ class Board:
     def get_pieces_left(self, color: int) -> dict:
         """
         Will get all of the pieces still on the board as well as their locations of a given color
-        :param color: color you would like to get the pieces of
-        :return: A dictionary of all the pieces for that color. key=piece object, value=position tuple
+        :param color: team (1 or -1)
+        :return: A dictionary of all the pieces for that team. {key=piece object, val=position tuple}
         """
         return self._pieces_left[color]
 
     @Profiler.profile
-    def update_pieces(self, piece: Piece, xpos: int, ypos: int, revert=False, delete=False, adding=False):
+    def add_piece(self, piece: Piece):
+        """Add a piece to self._pieces_left"""
+        self._pieces_left[piece.get_color()][piece] = piece.get_position()
+
+    @Profiler.profile
+    def delete_piece(self, piece: Piece):
+        """Delete a piece from self._pieces_left"""
+        self._pieces_left[piece.get_color()].pop(piece)
+
+    @Profiler.profile
+    def update_pieces(self, piece: Piece, xpos: int, ypos: int, revert=False):
         """
-        Updates the dictionaries every time a piece is moved
+        Updates self._pieces_left when time a piece is moved
         :param piece: The piece you would like to update
         :param xpos: The x position of the place you are moving the piece to
         :param ypos: The y position of the place you are moving the piece to
         :param revert: True if you would like to revert a move
-        :param delete: True if you would like to delete a piece
-        :param adding: True if you would like to add a piece to the colors piece dictionary
         """
-
-        if adding:
-            self._pieces_left[piece.get_color()][piece] = piece.get_position()
-            return 0
-
-        if delete:
-            self._pieces_left[piece.get_color()].pop(piece)
-            return 0
-
         if revert:
             piece.revert(xpos, ypos)
         else:
             piece.move(xpos, ypos)
 
         self._pieces_left[piece.get_color()][piece] = piece.get_position()
-
-    def _start_test_game(self):
-        """Starts a game for testing piece movement and game logic. (Testing purposes only!!!)"""
-        b = [[None for _ in range(8)] for _ in range(8)]
-
-        b[0][0] = King(0, 0, 1)
-        b[5][6] = Pawn(6, 5, 1)
-        b[7][0] = Bishop(0, 7, -1)
-        b[7][7] = King(7, 7, -1)
-
-        self._turn = 1  # sets the turn to white
-        self._move_count = 0
-        self._game_over = False
-        self._board = b
-
-        # initialize self._white_pieces and self._black_pieces
-        for j, i in all_positions:  # iterate over all positions
-            if isinstance(self._board[i][j], Piece):
-                p = self._board[i][j]
-                self._pieces_left[p.get_color()][p] = p.get_position()
 
     def get_moves_since_capture(self):
         """Get number of moves since the last capture"""
@@ -131,17 +120,15 @@ class Board:
         return i
 
     def _pawn_promotion(self, pawn: Pawn, pos2x: int, pos2y: int):
-        """
-        Promote a pawn by replacing it with a queen
-        :return deleted pawn
-        """
-        self.update_pieces(pawn, pos2x, pos2y, delete=True)  # delete the pawn
+        """Promote a pawn and replace it with a queen
+        :return the queen"""
+        self.delete_piece(pawn)  # delete the pawn
         queen = Queen(pos2x, pos2y, pawn.get_color())
-        self.update_pieces(queen, pos2x, pos2y, adding=True)  # add the queen
+        self.add_piece(queen)  # add the queen
         return queen
 
     def _castle(self, king, pos2x):
-        """Castle"""
+        """Complete a castle by moving and updating the corresponding rook"""
         pos1x, pos2y = king.get_position()  # king has same ypos (pos1y == pos2y)
         if pos2x == 2:  # queen-side castle
             pos1x, pos2x = 0, 3  # old rook x and new rook x
@@ -186,16 +173,15 @@ class Board:
             self.update_pieces(piece1, pos2x, pos2y)
 
         self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # update positions on the board
-        self.update_pieces(piece2, pos2x, pos2y, delete=True)  # delete captured piece
+        self.delete_piece(piece2)  # delete captured piece
         self.update_move_count()
         self._moves_since_capture_list.append(True)
         self._captured_pieces.append(piece2)
 
-    def _undo_promotion(self, pawn, queen, pos1):
-        pos1x, pos1y = pos1
-        pos2x, pos2y = queen.get_position()
-        self.update_pieces(queen, pos2x, pos2y, delete=True)  # delete the queen
-        self.update_pieces(pawn, pos1x, pos1y, adding=True)  # add the pawn
+    def _undo_promotion(self, pawn, queen):
+        """Undo a promotion; put the pawn back and delete the queen"""
+        self.delete_piece(queen)  # delete the queen
+        self.add_piece(pawn)  # add the pawn back
         return pawn
 
     def _undo_castle(self, king, pos2x):
@@ -211,14 +197,12 @@ class Board:
         self.update_pieces(rook, pos1x, pos2y, revert=True)  # = (pos1x, pos1y)\
 
     def _undo_move_to_space(self, piece: Piece, pos1, promoted):
-        """
-        make move on board
-        :return deleted pawn if it was promoted, None otherwise
-        """
+        """make move on board
+        :return deleted pawn if it was promoted, None otherwise"""
         pos1x, pos1y = pos1
         pos2x, pos2y = piece.get_position()
         if isinstance(promoted, Pawn):  # need to undo promote (piece is queen):
-            piece = self._undo_promotion(promoted, piece, pos1)  # pawn
+            piece = self._undo_promotion(promoted, piece)  # pawn
         else:
             self.update_pieces(piece, pos1x, pos1y, revert=True)
 
@@ -235,12 +219,12 @@ class Board:
         pos2x, pos2y = piece1.get_position()  # = captured_piece.get_position()  # piece1=queen
 
         if isinstance(promoted, Pawn):  # need to undo promote
-            piece1 = self._undo_promotion(promoted, piece1, pos1)  # pawn
+            piece1 = self._undo_promotion(promoted, piece1)  # pawn
         else:
             self.update_pieces(piece1, pos1x, pos1y, revert=True)  # moves piece to new position
 
         self._board[pos2y][pos2x], self._board[pos1y][pos1x] = captured_piece, piece1  # update positions on the board
-        self.update_pieces(captured_piece, pos2x, pos2y, adding=True)  # add captured piece
+        self.add_piece(captured_piece)  # add captured piece
         self.update_move_count(False)
         self._moves_since_capture_list.pop()
 
@@ -526,10 +510,11 @@ class Board:
                         continue  # continue if trying to castle but can't
                     if isinstance(piece2, King):  # don't add moves that capture the king
                         continue
+
+                    # TODO update this to use self.move_piece(pos1, (e1, e2), check=False) and self.undo_move()
                     self.update_pieces(piece1, e1, e2)  # temporarily make the move
                     if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
-                        pos2x, pos2y = piece2.get_position()
-                        self.update_pieces(piece2, pos2x, pos2y, delete=True)
+                        self.delete_piece(piece2)
 
                     self._board[pos1y][pos1x], self._board[e2][e1] = None, self._board[pos1y][pos1x]
                     self.update_move_count()
@@ -539,8 +524,7 @@ class Board:
 
                     self.update_pieces(piece1, pos1x, pos1y, revert=True)  # unmake the temporary move
                     if isinstance(piece2, Piece):  # add back piece to dict if necessary
-                        pos2x, pos2y = piece2.get_position()
-                        self.update_pieces(piece2, pos2x, pos2y, adding=True)
+                        self.add_piece(piece2)
                     self._board[pos1y][pos1x], self._board[e2][e1] = self._board[e2][e1], piece2
                     self.update_move_count(False)
 
@@ -578,18 +562,13 @@ class Board:
         if len(self.legal_moves()) == 0:
             print('game over')
             return True
-            self._game_over = True
         elif self.get_moves_since_capture() > 49:
             print('draw (50 move rule)')
             return True
-            self._game_over = True
         elif self._move_count > 200:
             print('draw (200 move rule)')
             return True
-
-            self._game_over = True
         return False
-        return self._game_over
 
     def winner(self):
         """

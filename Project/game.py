@@ -117,9 +117,9 @@ def run_game():
     mode = input("number of AI's: (1 to play against AI, 2 for AI vs AI simulation : ")
 
     if mode == "1":
-        play_game()
+        return play_game()
     elif mode == "2":
-        run_simulation()
+        return run_simulation()
     else:
         raise InvalidModeError(mode)
 

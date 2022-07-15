@@ -4,7 +4,6 @@
 #  -"basic" just favors capturing pieces of equal or lesser value, and favors not moving the king (need add more)
 #  -"medium" is minimax implemented (w/ alpha beta pruning), using AI scoring criteria
 
-import copy
 import time
 import math
 import random
@@ -31,7 +30,8 @@ class AI:
          """
         try:
             if board.checkmate():
-                return -99999999 * board.get_current_turn()  # large negative if white in checkmate, positive if black
+                # large negative if white in checkmate, positive if black
+                return -999999 * board.get_current_turn() * color
 
         except NoKingError:
             print(board)
@@ -126,7 +126,6 @@ class MinimaxAI(AI):
         :return: A tuple with best move and best evaluation"""
         # base case: depth = 0
         if depth == 0 or board.is_game_over():
-            board._game_over = False
             return None, self.scoring(board, self._team)
 
         moves = self.format_legal_moves(board)
@@ -203,7 +202,7 @@ class Node:
         self.samples = []
         self.first_move = first_move  # initial move
 
-        if parent != None:
+        if parent is not None:
             self.depth = parent.depth + 1
 
     def is_leaf_node(self):
@@ -211,7 +210,7 @@ class Node:
 
     def select_node(self):
         """Choose a node using the selection policy formula"""
-        c = 4000
+        c = 400
         lis = []
         for n in self.children:
             if n.visits == 0:
@@ -225,24 +224,8 @@ class Node:
         child = random.choice(best)
         return child
 
-    @staticmethod
-    def temp_board_move(board, move):
-        """Return a copy of the board after temporarily making a move"""
-        board1 = copy.deepcopy(board)
-        # make the move on the board
-        piece1, piece2 = board1.get_piece_from_position(move[0]), board1.get_board()[move[1][1]][move[1][0]]
-        pos1x, pos1y, pos2x, pos2y = move[0][0], move[0][1], move[1][0], move[1][1]
-        board1.update_pieces(piece1, pos2x, pos2y)
-        if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
-            board1.update_pieces(piece2, pos2x, pos2y, delete=True)
-        board1.get_board()[pos1y][pos1x], board1.get_board()[pos2y][pos2x] = None, board1.get_board()[pos1y][
-            pos1x]
-        board1.update_move_count()
-        board1.switch_turn()
-        return board1
-
     def expand_node(self):
-        if self.depth > 3:
+        if self.depth > 2:
             return self
 
         board = self.board
@@ -266,7 +249,7 @@ class Node:
 
     def simulation(self, t, team):
         """Run a simulation, return a resulting score"""
-        i = 0
+        i = 0  # limit the depth of the simulation (going further doesn't really give any information)
         while (not self.board.is_game_over()) and (i < 20):
             # random move on the board
             moves = AI.format_legal_moves(self.board)
@@ -277,14 +260,7 @@ class Node:
             self.board.switch_turn()
             i += 1
 
-        # TODO maybe use AI scoring to evaluate board instead of returning winner like this
-
-        if i == 20:  # limit the depth of the simulation (going further doesn't really give any information)
-            w = 0
-        else:
-            w = self.board.winner()
         w = AI.scoring(self.board, team)
-        self.board._game_over = False
 
         for _ in range(i):
             self.board.undo_move()
@@ -298,13 +274,14 @@ class Node:
         self.total += result
         self.samples.append(result)
 
-        if self.parent != None:
+        if self.parent is not None:
             self.parent.backpropogate(result)
 
 
 class MCTSAI(AI):
 
-    def best_board(self, node):
+    @staticmethod
+    def best_board(node):
         """Best action"""
         counter = {}
         for n in node.children:
@@ -314,13 +291,8 @@ class MCTSAI(AI):
                 sample = sum(n.samples) / len(n.samples)  # [sample] = [n.total / n.visits]
             counter[n.move] = sample
             print('d', n.move, sample, len(n.samples))
-            #if n.move in counter.keys():
-            #    counter[n.move] += [sample]
-            #else:
-            #    counter[n.move] = [sample]
 
         lis = counter.items()
-        # print([(a, count[a], counter[a]) for a in counter.keys()])
         v = max(counter.values())
         best = [move for move, val in lis if val == v]
         return random.choice(best)
@@ -336,9 +308,9 @@ class MCTSAI(AI):
                 n = n.select_node()
             if n.visits != 0:  # if leaf node not visited yet, then expand it
                 n = n.expand_node()
-            print('6', time.time() - start)
+            # print('6', time.time() - start)
             result = n.simulation(start, self._team)
-            print('7', time.time() - start)
+            # print('7', time.time() - start)
             n.backpropogate(result)
             i += 1
         print(i)
