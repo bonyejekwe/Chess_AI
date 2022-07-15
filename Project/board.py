@@ -28,7 +28,7 @@ class Board:
         A1 is 0,0. H8 is 7,7
         Move count is number of moves
         """
-        self._board = list()
+        self._board = []
         self._move_count = 0
         self._turn = 1  # sets the turn to white
         self._game_over = False  # change when checkmate happens
@@ -271,8 +271,6 @@ class Board:
     def undo_move(self):
         """Unmake the last move (pos1, pos2) from the board"""
         pos1, pos2 = self._moves_list.pop()  # get the last move
-        pos1x, pos1y = pos1
-        pos2x, pos2y = pos2
         piece1 = self.get_piece_from_position(pos2)
 
         captured_piece = self._captured_pieces.pop()
@@ -511,7 +509,7 @@ class Board:
             return self._legal_moves
 
         possible_moves = collections.defaultdict(list)
-        consider = self.get_pieces_left(self.get_current_turn())
+        consider = self.get_pieces_left(self._turn)
 
         for piece1, pos1 in consider.items():
             pos1x, pos1y = pos1  # = consider[piece1]
@@ -523,11 +521,11 @@ class Board:
                     if (isinstance(piece1, Pawn) and ((isinstance(piece2, Piece) and (e1 == pos1x))
                                                       or (not isinstance(piece2, Piece) and abs(e1 - pos1x) == 1))):
                         continue
-                    if isinstance(piece1, King) and (abs(e1 - pos1x) == 2) and (not self.castling_criteria(piece1, (e1, e2))):
+                    if isinstance(piece1, King) and (abs(e1 - pos1x) == 2) and (
+                            not self.castling_criteria(piece1, (e1, e2))):
                         continue  # continue if trying to castle but can't
                     if isinstance(piece2, King):  # don't add moves that capture the king
                         continue
-
                     self.update_pieces(piece1, e1, e2)  # temporarily make the move
                     if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
                         pos2x, pos2y = piece2.get_position()
@@ -536,7 +534,7 @@ class Board:
                     self._board[pos1y][pos1x], self._board[e2][e1] = None, self._board[pos1y][pos1x]
                     self.update_move_count()
 
-                    if not self.is_in_check(self.get_current_turn()):
+                    if not self.is_in_check(self._turn):
                         possible_moves[(pos1x, pos1y)].append((e1, e2))
 
                     self.update_pieces(piece1, pos1x, pos1y, revert=True)  # unmake the temporary move
@@ -549,24 +547,13 @@ class Board:
         self._legal_moves = possible_moves
         return possible_moves
 
-    def checkmate(self, color) -> bool:
+    @Profiler.profile
+    def checkmate(self) -> bool:
         """
-        Determines if a team is in checkmate. Returns the color of the team in checkmate. If there is no one in
-        checkmate, returns 0.
-        :param color: 1 for white, -1 for black.
-        :return: 1 for white in checkmate, -1 for black in checkmate, 0 for no one in checkmate
+        Determines if the current team is in checkmate.
+        :return: Returns true if the team is in checkmate, false otherwise.
         """
-        switch_team = False
-        ret = False
-        if self.get_current_turn() != color:
-            self.switch_turn()
-            switch_team = True
-        if self.is_in_check(color) and len(self.legal_moves()) == 0:
-            ret = True
-
-        if switch_team:
-            self.switch_turn()
-        return ret
+        return self.is_in_check(self._turn) and (len(self.legal_moves()) == 0)
 
     def get_king_position(self, color: int) -> tuple:
         """
@@ -581,6 +568,7 @@ class Board:
                 return pos
         raise NoKingError(color)
 
+    @Profiler.profile
     def is_game_over(self):
         """
         Determines whether or not the game is over based on if the team can no longer move, or if the draw states have
@@ -589,25 +577,31 @@ class Board:
         """
         if len(self.legal_moves()) == 0:
             print('game over')
+            return True
             self._game_over = True
         elif self.get_moves_since_capture() > 49:
             print('draw (50 move rule)')
+            return True
             self._game_over = True
         elif self._move_count > 200:
             print('draw (200 move rule)')
+            return True
+
             self._game_over = True
+        return False
         return self._game_over
 
     def winner(self):
         """
         Determines which team won when the game ends
-        :return: 1 white won, 2 for white put black in stalemate, negative numbers for black and 0 for a draw
+
+        :return: 3=white win, 1= white put black in stalemate, negative numbers for black, 0 for a draw (ie 200 move)
         """
         if len(self.legal_moves()) == 0 and self.is_in_check(self._turn):
             print('checkmate')
-            return self.get_current_turn() * -1
+            return self._turn * -3
         elif len(self.legal_moves()) == 0:
             print('stalemate')
-            return 2 * self.get_current_turn()
+            return self._turn
         else:
             return 0

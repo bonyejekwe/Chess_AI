@@ -3,7 +3,6 @@
 
 from profiler import Profiler
 from all_moves import all_legal_moves_dict
-from all_moves import all_positions
 
 
 class InvalidMoveError(Exception):
@@ -202,41 +201,11 @@ class King(Piece):
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
         Here: true if piece criteria and fulfills king adjacent movement criteria"""
-        return super().criteria(x, y) and (abs(y - self._ypos) <= 1) and ((abs(x - self._xpos) <= 1) or self.king_castling(x, y))
+        return super().criteria(x, y) and (abs(y - self._ypos) <= 1) and (
+                    (abs(x - self._xpos) <= 1) or self.king_castling(x, y))
 
     def __str__(self):
         if self.get_color() == 1:
             return "K"
         else:
             return "k"
-
-## Need to redo the criteria to redo the all-legal-moves-dict!!!
-
-def get_moves_dict():
-    moves_dict = {}
-    for x, y in all_positions:  # [(0, 0), (1, 0), (2, 0), ...  (5, 7), (6, 7), (7, 7)]
-        moves_dict[('white_pawn', (x, y))] = list(filter(lambda m: Pawn(x, y, 1).criteria(m[0], m[1]), all_positions))
-        moves_dict[('black_pawn', (x, y))] = list(filter(lambda m: Pawn(x, y, -1).criteria(m[0], m[1]), all_positions))
-        moves_dict[('knight', (x, y))] = list(filter(lambda m: Knight(x, y, 1).criteria(m[0], m[1]), all_positions))
-        moves_dict[('bishop', (x, y))] = list(filter(lambda m: Bishop(x, y, 1).criteria(m[0], m[1]), all_positions))
-        moves_dict[('rook', (x, y))] = list(filter(lambda m: Rook(x, y, 1).criteria(m[0], m[1]), all_positions))
-        moves_dict[('queen', (x, y))] = list(filter(lambda m: Queen(x, y, 1).criteria(m[0], m[1]), all_positions))
-        moves_dict[('king', (x, y))] = list(filter(lambda m: King(x, y, 1).criteria(m[0], m[1]), all_positions))
-
-    return moves_dict
-
-def reformat_current():
-    d = all_legal_moves_dict
-    new_dict = {}
-    for piece_type, d1 in d.items():
-        for ypos, d2 in d1.items():
-            for xpos, lis in d2.items():
-                new_dict[(piece_type, (xpos, ypos))] = lis
-    return new_dict
-
-
-#print(get_moves_dict())
-#print("")
-#print({k :v for k, v in get_moves_dict().items() if k[0] == "black_pawn"})
-
-#print(reformat_current())

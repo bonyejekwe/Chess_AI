@@ -9,8 +9,7 @@ import time
 import math
 import random
 from pieces import *
-from board import Board
-import functools
+from board import Board, NoKingError
 from profiler import Profiler
 
 
@@ -31,18 +30,17 @@ class AI:
         :return: A generalized score (int) for the difference in total piece worth for each side.
          """
         try:
-            if board.checkmate(1):
-                return -99999999
-            if board.checkmate(-1):
-                return 99999999
-        except Board.NoKing:
+            if board.checkmate():
+                return -99999999 * board.get_current_turn()  # large negative if white in checkmate, positive if black
+
+        except NoKingError:
             print(board)
             pass
 
         scores = []  # [white score, black score]
         num_moves = board.get_current_move_count()
         for team in [1, -1]:
-            consider = board.get_pieces_left(team)  # white_pieces_left, then black_pieces_left
+            consider = board.get_pieces_left(color * team)  # pieces left for AI, then pieces left for other team
 
             worth_weights = []  # initial weighting: get the difference in worth for each team
             pawn_development = []  # pawn development: increase score if pawns are moving up the board
@@ -66,7 +64,7 @@ class AI:
                     15 * sum(piece_development))
             scores.append(score)
 
-        return scores[0] - scores[1]  # white_score - black_score
+        return scores[0] - scores[1]  # AI score - other score
 
     def get_team(self):
         """:return: The team the AI is"""
@@ -75,10 +73,10 @@ class AI:
     @staticmethod
     def format_legal_moves(board: Board):
         """Retrieve the legal moves for the AI. Return as a list of tuples of tuples. Takes as input a board object."""
-        d = dict(board.legal_moves())  # key = piece position : values = list of possible next moves (tuples)
+        all_moves = []
+        d = board.legal_moves()  # key = piece position : values = list of possible next moves (tuples)
         for pos in d:
-            d[pos] = [(pos, val) for val in d[pos]]
-        all_moves = functools.reduce(lambda l1, l2: l1 + l2, d.values())  # ((x1, y1), (x2, y2)): move: p1 -> p2
+            all_moves += [(pos, val) for val in d[pos]]  # ((x1, y1), (x2, y2)): move: p1 -> p2
         return all_moves
 
     def all_legal_moves(self, board: Board):
@@ -113,73 +111,79 @@ class MinimaxAI(AI):
 
     def __init__(self, color: int):
         super().__init__(color)
-        self.alpha = -999999999
-        self.beta = 999999999
+        self.alpha = -1 * float('inf')
+        self.beta = float('inf')
         self.max_depth = 3
 
     @Profiler.profile
-    def minimax(self, board: Board, depth: int, maximizing_player: int, maximizing_color: int):
+    def minimax(self, board: Board, depth: int, alpha: float, beta: float, maximizing_player: bool):
         """Implement minimax algorithm: the best move for the maximizing color looking ahead depth moves on the board
         :param board: The current board being evaluated
         :param depth: The current depth being evaluated
-        :param maximizing_player: The team maximizing their score at the current depth
-        :param maximizing_color: The team maximizing their score overall
+        :param alpha: value for alpha
+        :param beta: value for beta
+        :param maximizing_player: bool representing whether the AI's team is maximizing their score at the current depth
         :return: A tuple with best move and best evaluation"""
-
         # base case: depth = 0
         if depth == 0 or board.is_game_over():
             board._game_over = False
-            return None, self.scoring(board, maximizing_color)
+            return None, self.scoring(board, self._team)
 
         moves = self.format_legal_moves(board)
         best_move = moves[0]
 
-        min_or_max = maximizing_player * maximizing_color  # 1 if same (maximizing), -1 if different (minimizing)
-        m_eval = -10000 * min_or_max  # large negative if same (maximizing), large positive if different (minimizing)
-        for move in moves:
-            # make the move on the board
-            board.move_piece(move[0], move[1], check=False)
-            board.switch_turn()
+        if maximizing_player:
+            max_eval = -1 * float('inf')
+            for move in moves:
+                # make the move on the board
+                board.move_piece(move[0], move[1], check=False)
+                board.switch_turn()
 
-            # make a recursive call to minimax to find the best evaluation at a specified depth
-            curr_eval = self.minimax(board, depth - 1, -1 * maximizing_player, maximizing_color)[1]
+                # make a recursive call to minimax to find the best evaluation at a specified depth
+                curr_eval = self.minimax(board, depth - 1, alpha, beta, False)[1]
 
-            # unmake the move on the board
-            board.undo_move()
-            board.switch_turn()
+                # unmake the move on the board
+                board.undo_move()
+                board.switch_turn()
 
-            # update the best found move and score if necessary
-            if min_or_max == 1:
-                if self.alpha == -999999999:
-                    self.alpha = curr_eval
-                if curr_eval > self.alpha:
-                    self.alpha = curr_eval
-                if self.beta > self.alpha and self.beta != 999999999:
-                    print('Time saved!!!! b>a')
-                    break
-            else:
-                if self.beta == 999999999:
-                    self.beta = curr_eval
-                if curr_eval < self.beta:
-                    self.beta = curr_eval
-                if self.alpha < self.beta and self.alpha != -999999999:
-                    break
-
-            if min_or_max == 1:
-                if curr_eval > m_eval:
-                    m_eval = curr_eval
-                    best_move = move
-            else:
-                if curr_eval < m_eval:
-                    m_eval = curr_eval
+                if curr_eval > max_eval:
+                    max_eval = curr_eval
                     best_move = move
 
-        return best_move, m_eval
+                alpha = max(alpha, curr_eval)
+
+                if beta <= alpha:
+                    break
+            return best_move, max_eval
+
+        else:
+            min_eval = float('inf')
+            for move in moves:
+                # make the move on the board
+                board.move_piece(move[0], move[1], check=False)
+                board.switch_turn()
+
+                # make a recursive call to minimax to find the best evaluation at a specified depth
+                curr_eval = self.minimax(board, depth - 1, alpha, beta, True)[1]
+
+                # unmake the move on the board
+                board.undo_move()
+                board.switch_turn()
+
+                if curr_eval < min_eval:
+                    min_eval = curr_eval
+                    best_move = move
+
+                beta = min(beta, curr_eval)
+
+                if beta <= alpha:
+                    break
+            return best_move, min_eval
 
     @Profiler.profile
     def make_move(self, board: Board):
         """Choose (make a weighted choice) a move for the AI to make and make the move. Takes as input a board object"""
-        start_pos, end_pos = self.minimax(board, self.max_depth, 1, self._team)[0]  # minimax
+        start_pos, end_pos = self.minimax(board, self.max_depth, self.alpha, self.beta, True)[0]  # minimax
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
         print(board)
@@ -244,14 +248,50 @@ class Node:
         board = self.board
         if self.parent is None:  # is the root node
             for move in AI.format_legal_moves(board):
-                next_board = self.temp_board_move(board, move)
-                self.children.append(Node(next_board, move, self, move))
+                board.move_piece(move[0], move[1])
+                board.switch_turn()
+                self.children.append(Node(board, move, self, move))
+                board.undo_move()
+                board.switch_turn()
+
         else:  # has a parent
             for move in AI.format_legal_moves(board):
-                next_board = self.temp_board_move(board, move)
-                self.children.append(Node(next_board, move, self, self.first_move))
+                board.move_piece(move[0], move[1])
+                board.switch_turn()
+                self.children.append(Node(board, move, self, self.first_move))
+                board.undo_move()
+                board.switch_turn()
 
         return random.choice(self.children)  # random node
+
+    def simulation(self, t, team):
+        """Run a simulation, return a resulting score"""
+        i = 0
+        while (not self.board.is_game_over()) and (i < 20):
+            # random move on the board
+            moves = AI.format_legal_moves(self.board)
+            move = random.choice(moves)
+
+            # make move on the board
+            self.board.move_piece(move[0], move[1])
+            self.board.switch_turn()
+            i += 1
+
+        # TODO maybe use AI scoring to evaluate board instead of returning winner like this
+
+        if i == 20:  # limit the depth of the simulation (going further doesn't really give any information)
+            w = 0
+        else:
+            w = self.board.winner()
+        w = AI.scoring(self.board, team)
+        self.board._game_over = False
+
+        for _ in range(i):
+            self.board.undo_move()
+            self.board.switch_turn()
+        self.board._legal_moves = {}
+
+        return w
 
     def backpropogate(self, result):
         self.visits += 1
@@ -268,64 +308,38 @@ class MCTSAI(AI):
         """Best action"""
         counter = {}
         for n in node.children:
-            print(n.move, n.samples)
             if len(n.samples) == 0:
                 sample = 0
             else:
                 sample = sum(n.samples) / len(n.samples)  # [sample] = [n.total / n.visits]
+            counter[n.move] = sample
+            print('d', n.move, sample, len(n.samples))
+            #if n.move in counter.keys():
+            #    counter[n.move] += [sample]
+            #else:
+            #    counter[n.move] = [sample]
 
-            if n.move in counter.keys():
-                counter[n.move] += [sample]
-            else:
-                counter[n.move] = [sample]
-
-        count = {}
-        for move in counter.keys():  # or self.median(count[act]); or min(count[act])
-            count[move] = sum(counter[move]) / len(counter[move])  # average for each list
-
-        lis = count.items()
+        lis = counter.items()
         # print([(a, count[a], counter[a]) for a in counter.keys()])
-        v = max(count.values())
+        v = max(counter.values())
         best = [move for move, val in lis if val == v]
         return random.choice(best)
 
-    def simulation(self, node, t):
-        """Run a simulation, return a resulting score"""
-        b = copy.deepcopy(node.board)  # single deep copy for a simulation
-        print('6.5', time.time() - t)
-
-        while not b.is_game_over():
-            # random move on the board
-            moves = AI.format_legal_moves(b)
-            move = random.choice(moves)
-
-            # make move on the board
-            b.move_piece(move[0], move[1])
-            b.switch_turn()
-        print('6.75', time.time() - t)
-        return b.winner()
-
     def mcts(self, board: Board):
         start = time.time()
-        print('1', time.time() - start)
         root = Node(board, None, None, None)
-        print('2', time.time() - start)
         root.expand_node()
-        print('3', time.time() - start)
         i = 0
         while time.time() - start < 5:  # 0.9 seconds
             n = root
-            print('4', time.time() - start)
             while not n.is_leaf_node():
                 n = n.select_node()
-            print('5', time.time() - start)
             if n.visits != 0:  # if leaf node not visited yet, then expand it
                 n = n.expand_node()
             print('6', time.time() - start)
-            result = self.simulation(n, start)
+            result = n.simulation(start, self._team)
             print('7', time.time() - start)
             n.backpropogate(result)
-            print('8', time.time() - start)
             i += 1
         print(i)
         return self.best_board(root)
