@@ -43,27 +43,23 @@ class AI:
             consider = board.get_pieces_left(color * team)  # pieces left for AI, then pieces left for other team
 
             worth_weights = []  # initial weighting: get the difference in worth for each team
-            pawn_development = []  # pawn development: increase score if pawns are moving up the board
-            knight_development = []  # knight development: increase score if pawns are moving up the board
-            king_development = []  # king development: increase score if king is not moving up the board
+            constant_dev = []  # development of pieces that should stay the same throughout the game
+            diminishing_dev = []  # development of pieces that should become less important as game goes on
             piece_development = []  # general piece development: increase weight if pieces have many options to move
 
             for p in consider:
                 x, y = consider[p]
-                if isinstance(p, Pawn):
-                    pawn_development.append(p.eval[y][x])
+                if isinstance(p, Pawn) or isinstance(p, Knight):  # diminish importance as game goes on
+                    diminishing_dev.append(p.eval[y][x])
                 else:
-                    if isinstance(p, Knight):
-                        knight_development.append(p.eval[y][x])
-                    elif isinstance(p, King):
-                        king_development.append(80 - (10 * (p.get_position()[1] - p.original_position()[1])))
-                        #king_development.append(80 - (10 * (consider[p][1] - p.original_position()[1])))
+                    constant_dev.append(p.eval[y][x])
+
+                if not isinstance(p, Pawn):
                     piece_development.append(len(p.legal_moves()))
                 worth_weights.append(50 * p.get_worth())
 
             score = sum(worth_weights)
-            score += ((sum(pawn_development) + sum(knight_development)) / num_moves) + (sum(king_development)) + (
-                    15 * sum(piece_development))
+            score += (sum(diminishing_dev) / num_moves) + (sum(constant_dev)) + (15 * sum(piece_development))
             scores.append(score)
 
         return scores[0] - scores[1]  # AI score - other score

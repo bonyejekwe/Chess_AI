@@ -3,7 +3,7 @@
 
 from profiler import Profiler
 from all_moves import all_legal_moves_dict
-from evaluation import *#white_pawn_dev, black_pawn_dev, knight_dev
+from evaluation import *
 
 
 class InvalidMoveError(Exception):
@@ -119,7 +119,10 @@ class Knight(Piece):
         super().__init__(xpos, ypos, color)
         self._worth = 3
         self._name = 'knight'
-        self.eval = knight_dev
+        if color == 1:
+            self.eval = white_knight_dev
+        else:
+            self.eval = black_knight_dev
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
@@ -140,6 +143,10 @@ class Bishop(Piece):
         super().__init__(xpos, ypos, color)
         self._worth = 3
         self._name = 'bishop'
+        if color == 1:
+            self.eval = white_bishop_dev
+        else:
+            self.eval = black_bishop_dev
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
@@ -159,6 +166,10 @@ class Rook(Piece):
         super().__init__(xpos, ypos, color)
         self._worth = 5
         self._name = 'rook'
+        if color == 1:
+            self.eval = white_rook_dev
+        else:
+            self.eval = black_rook_dev
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
@@ -178,6 +189,10 @@ class Queen(Piece):
         super().__init__(xpos, ypos, color)
         self._worth = 9
         self._name = 'queen'
+        if color == 1:
+            self.eval = white_queen_dev
+        else:
+            self.eval = black_queen_dev
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
@@ -198,6 +213,10 @@ class King(Piece):
         super().__init__(xpos, ypos, color)
         self._worth = 90
         self._name = 'king'
+        if color == 1:
+            self.eval = white_king_dev
+        else:
+            self.eval = black_king_dev
 
     def king_castling(self, new_xpos, new_ypos):
         return (not self.get_was_moved()) and (abs(new_xpos - self._xpos) == 2) and (new_ypos == self._ypos)
