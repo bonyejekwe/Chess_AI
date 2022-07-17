@@ -3,6 +3,7 @@
 
 from profiler import Profiler
 from all_moves import all_legal_moves_dict
+from evaluation import *#white_pawn_dev, black_pawn_dev, knight_dev
 
 
 class InvalidMoveError(Exception):
@@ -90,8 +91,10 @@ class Pawn(Piece):
         self._worth = 1
         if color == 1:
             self._name = 'white_pawn'
+            self.eval = white_pawn_dev
         else:
             self._name = 'black_pawn'
+            self.eval = black_pawn_dev
 
     def pawn_first_move(self, new_xpos, new_ypos):
         """Returns true if pawn is trying to move 2 spaces for first move"""
@@ -116,6 +119,7 @@ class Knight(Piece):
         super().__init__(xpos, ypos, color)
         self._worth = 3
         self._name = 'knight'
+        self.eval = knight_dev
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself

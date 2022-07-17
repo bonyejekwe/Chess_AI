@@ -19,7 +19,7 @@ class AI:
         self._legal_moves = []
 
     @staticmethod
-    # @Profiler.profile
+    @Profiler.profile
     def scoring(board: Board, color: int) -> int:
         """
         Generalized scoring system: score is positive if white is winning and negative if black
@@ -30,14 +30,14 @@ class AI:
          """
         try:
             if board.checkmate():
-                # large negative if white in checkmate, positive if black
+                # large negative if AI team in checkmate, positive otherwise
                 return -999999 * board.get_current_turn() * color
 
         except NoKingError:
             print(board)
             pass
 
-        scores = []  # [white score, black score]
+        scores = []  # [AI score, other team score]
         num_moves = board.get_current_move_count()
         for team in [1, -1]:
             consider = board.get_pieces_left(color * team)  # pieces left for AI, then pieces left for other team
@@ -49,13 +49,15 @@ class AI:
             piece_development = []  # general piece development: increase weight if pieces have many options to move
 
             for p in consider:
+                x, y = consider[p]
                 if isinstance(p, Pawn):
-                    pawn_development.append(5 * (p.get_position()[1] - 1))
+                    pawn_development.append(p.eval[y][x])
                 else:
                     if isinstance(p, Knight):
-                        knight_development.append(20 * (5 - abs(3 - p.get_position()[1])))
+                        knight_development.append(p.eval[y][x])
                     elif isinstance(p, King):
                         king_development.append(80 - (10 * (p.get_position()[1] - p.original_position()[1])))
+                        #king_development.append(80 - (10 * (consider[p][1] - p.original_position()[1])))
                     piece_development.append(len(p.legal_moves()))
                 worth_weights.append(50 * p.get_worth())
 

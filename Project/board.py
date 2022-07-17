@@ -84,12 +84,10 @@ class Board:
         """
         return self._pieces_left[color]
 
-    @Profiler.profile
     def add_piece(self, piece: Piece):
         """Add a piece to self._pieces_left"""
         self._pieces_left[piece.get_color()][piece] = piece.get_position()
 
-    @Profiler.profile
     def delete_piece(self, piece: Piece):
         """Delete a piece from self._pieces_left"""
         self._pieces_left[piece.get_color()].pop(piece)
@@ -229,7 +227,7 @@ class Board:
         self._moves_since_capture_list.pop()
 
     @Profiler.profile
-    def move_piece(self, pos1: tuple, pos2: tuple, check=True) -> Union[Piece, None]:
+    def move_piece(self, pos1: tuple, pos2: tuple, check=True) -> None:
         """
         Moves a piece from one position to another, checking the legality and correctness of the move
         :param pos1: A tuple containing int positions for x and y. Current Position
@@ -250,7 +248,6 @@ class Board:
             self._move_to_space(piece1, pos2[0], pos2[1])  # make a move, promote pawn or castle if needed
         else:  # if the place moving to is not empty; capturing from other team
             self._capture_piece(piece1, piece2)  # return the captured piece
-        return
 
     def undo_move(self):
         """Unmake the last move (pos1, pos2) from the board"""
@@ -512,6 +509,7 @@ class Board:
                         continue
 
                     # TODO update this to use self.move_piece(pos1, (e1, e2), check=False) and self.undo_move()
+                    # TODO problem is that dictionary items change during iteration
                     self.update_pieces(piece1, e1, e2)  # temporarily make the move
                     if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
                         self.delete_piece(piece2)
@@ -571,16 +569,14 @@ class Board:
         return False
 
     def winner(self):
-        """
-        Determines which team won when the game ends
-
-        :return: 3=white win, 1= white put black in stalemate, negative numbers for black, 0 for a draw (ie 200 move)
-        """
-        if len(self.legal_moves()) == 0 and self.is_in_check(self._turn):
-            print('checkmate')
-            return self._turn * -3
-        elif len(self.legal_moves()) == 0:
-            print('stalemate')
-            return self._turn
+        """Determines which team won when the game ends
+        :return: 3=white win, 1= white put black in stalemate, negative numbers for black, 0 for a draw (ie 200 move)"""
+        if len(self.legal_moves()) == 0:
+            if self.is_in_check(self._turn):
+                print('checkmate')
+                return self._turn * -3
+            else:
+                print('stalemate')
+                return self._turn
         else:
             return 0
