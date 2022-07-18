@@ -1,6 +1,5 @@
 # displayGame.py: a graphical user interface (GUI) for our chess AI
 
-from board import Board
 import pygame
 from AI import *
 from pieces import *
@@ -26,17 +25,18 @@ class PlayGame:
         self.white, self.black = (240, 217, 181), (181, 136, 99)
         self.chosen_color = (54, 173, 74)  # Set the chosen color
         self.width, self.height = 800, 800  # Define the width, height, and cell size
-        self.cell_size = self.width / 8.0  # Define the cell size
+        self.cell_size = 100  # Define the cell size (self.width / 8.0)
         self.pos_pieces = ['K', 'Q', 'B', 'R', 'N', 'P']  # Define the possible pieces
 
         # Get the piece images
-        self.white_pieces = {
-            self.pos_pieces[i]: pygame.transform.scale(pygame.image.load(r'Piece Images/{}/{}.png'.format(
-                'white', self.pos_pieces[i])), (100, 100)) for i in range(len(self.pos_pieces))}
+        self.white_pieces = {p: pygame.transform.scale(pygame.image.load(r'Piece Images/{}/{}.png'.format(
+            'white', p)), (100, 100)) for p in self.pos_pieces}
 
-        self.black_pieces = {
-            self.pos_pieces[i]: pygame.transform.scale(pygame.image.load(r'Piece Images/{}/{}.png'.format(
-                'black', self.pos_pieces[i])), (100, 100)) for i in range(len(self.pos_pieces))}
+        self.black_pieces = {p: pygame.transform.scale(pygame.image.load(r'Piece Images/{}/{}.png'.format(
+            'black', p)), (100, 100)) for p in self.pos_pieces}
+
+        self.display_board = pygame.Surface((self.width, self.height))  # Create the board display surface
+        self.board = Board()  # Create the board
 
         if start_on_creation:
             self.start_game()
@@ -50,28 +50,24 @@ class PlayGame:
     def initialize_board(self):
         """Draws the board to begin with and sets important instance variables"""
         pygame.display.set_caption("Chess Board")  # set caption
-
-        self.display_board = pygame.Surface((self.width, self.height))  # Create the board surface
-        self.display_board.fill(self.white)  # Fill it with white
+        self.display_board.fill(self.white)  # Fill board with white squares
 
         # Draw black squares on the board
         for x, y in all_positions:  # Loop through all_positions
             if (x + y) % 2 == 1:
-                pygame.draw.rect(self.display_board, self.black,
-                                 (x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size))
+                rect_dim = (x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size)
+                pygame.draw.rect(self.display_board, self.black, rect_dim)
 
     def run_game(self):
         """Run game using num of AI's (1=player vs AI, 2=AI vs AI). Defaults to AI vs AI"""
-        self.board = Board()  # Set the board
-
         # Get the side from the player
-        self.side = input("Select side you would like to play on (1 for white, -1 for black): ")
-        if self.side == "1" or self.side == "-1":
-            self.side = int(self.side)
+        side = input("Select side you would like to play on (1 for white, -1 for black): ")
+        if side == "1" or side == "-1":
+            side = int(side)
         else:
-            raise InvalidTeamError(self.side)
+            raise InvalidTeamError(side)
 
-        ai_team = -1 * self.side  # Set the ai's side
+        ai_team = -1 * side  # Set the ai's side
 
         # Get the desired AI type and define AI
         ai_types = {0: AI, 1: MinimaxAI, 2: MCTSAI}
@@ -94,7 +90,8 @@ class PlayGame:
         piece_to_move_chosen = False  # Set the variable for if a new move has been chosen
         chosen_piece = []  # Set the variable for the location of the chosen piece
 
-        if self.side == -1:  # Check if the player's side is black, and if it is then have the AI make the first move
+        side = -1 * game_ai.get_team()  # side is the player's team
+        if side == -1:  # Check if the player's side is black, and if it is then have the AI make the first move
             pass
 
         while not game_exit:  # While the exit button has not been pressed
@@ -106,19 +103,19 @@ class PlayGame:
                     game_exit = True
 
                 # If the event is clicking the mouse, then get the position
-                if event.type == pygame.MOUSEBUTTONUP and self.board.get_current_turn() == self.side:
+                if event.type == pygame.MOUSEBUTTONUP and self.board.get_current_turn() == side:
                     pos = pygame.mouse.get_pos()  # Find the mouse position
 
                     # Find the chess coordinates of the chosen position
-                    x, y = int(pos[0] / self.cell_size), 7 - int(pos[1] / self.cell_size)  # print(x, y)
+                    x, y = int(pos[0] / self.cell_size), 7 - int(pos[1] / self.cell_size)
 
                     # If this is the first piece we have chosen and it is a piece of our color
                     if (not piece_to_move_chosen) and isinstance(self.board.get_board()[y][x], Piece) and \
-                            self.board.get_board()[y][x].get_color() == self.side:
+                            self.board.get_board()[y][x].get_color() == side:
 
                         # Change the background color of the cell
-                        pygame.draw.rect(self.display_board, self.chosen_color, (
-                            (x) * self.cell_size, (7 - y) * self.cell_size, self.cell_size, self.cell_size))
+                        rect_dim = (x * self.cell_size, (7 - y) * self.cell_size, self.cell_size, self.cell_size)
+                        pygame.draw.rect(self.display_board, self.chosen_color, rect_dim)
 
                         piece_to_move_chosen = True  # Change the variable to true
                         chosen_piece = [x, y]  # Save the location of the chosen piece
@@ -128,7 +125,7 @@ class PlayGame:
 
                         try:  # Check that the move was valid using game code
                             self.board.move_piece(tuple(chosen_piece), (x, y))
-                        except:  # This is far too general, but it is also not nearly finished
+                        except InvalidBoardMoveError:
                             continue  # Exit out of current loop iteration
 
                         # Find out which color should be used
@@ -138,9 +135,9 @@ class PlayGame:
                             overwrite_color = self.white
 
                         # Change the background color of the last location
-                        pygame.draw.rect(self.display_board, overwrite_color, (
-                            chosen_piece[0] * self.cell_size, (7 - chosen_piece[1]) * self.cell_size, self.cell_size,
-                            self.cell_size))
+                        rect_dim = (chosen_piece[0] * self.cell_size, (7 - chosen_piece[1]) * self.cell_size,
+                                    self.cell_size, self.cell_size)
+                        pygame.draw.rect(self.display_board, overwrite_color, rect_dim)
 
                         piece_to_move_chosen = False  # set the piece_to_move_chosen to false
                         self.board.switch_turn()  # Change the current turn
@@ -156,9 +153,9 @@ class PlayGame:
                             overwrite_color = self.white
 
                         # Change the background color of the last location
-                        pygame.draw.rect(self.display_board, overwrite_color, (
-                            chosen_piece[0] * self.cell_size, (7 - chosen_piece[1]) * self.cell_size, self.cell_size,
-                            self.cell_size))
+                        rect_dim = (chosen_piece[0] * self.cell_size, (7 - chosen_piece[1]) * self.cell_size,
+                                    self.cell_size, self.cell_size)
+                        pygame.draw.rect(self.display_board, overwrite_color, rect_dim)
 
                         piece_to_move_chosen = False  # Reset the chosen piece variable
 
@@ -166,13 +163,12 @@ class PlayGame:
             self.draw_pieces(game_display)  # Draw the pieces on the board
             pygame.display.update()  # Update the display
 
-            if self.board.get_current_turn() == -1 * self.side:  # If its the computer's turn
+            if self.board.get_current_turn() == -1 * side:  # If its the computer's turn
                 if self.board.is_game_over():  # Check if the game is over
                     return self.board.winner()
 
                 if self.board.is_in_check(self.board.get_current_turn()):  # Check if a player is in check
-                    for _ in range(10):
-                        print(f'{self.board.get_current_turn()} is in check!!!')
+                    print(f'{self.board.get_current_turn()} is in check!!!')
 
                 game_ai.all_legal_moves(self.board)  # Make the AI move
                 game_ai.make_move(self.board)
@@ -181,8 +177,7 @@ class PlayGame:
                     return self.board.winner()
 
                 if self.board.is_in_check(self.board.get_current_turn()):  # Check if a player is in check
-                    for _ in range(10):
-                        print(f'{self.board.get_current_turn()} is in check!!!')
+                    print(f'{self.board.get_current_turn()} is in check!!!')
 
                 self.board.switch_turn()  # Switch the turn
 
@@ -197,10 +192,9 @@ class PlayGame:
                 piece_type = str(brd[x][y]).upper()  # Find the piece type
                 piece_color = brd[x][y].get_color()  # 1 is white and -1 is black
 
-                # Draw the respective piece
-                if piece_color == 1:
+                if piece_color == 1:  # draw the white pieces
                     game_display.blit(self.white_pieces[piece_type], (self.cell_size * y, self.cell_size * (7 - x)))
-                elif piece_color == -1:
+                elif piece_color == -1:  # draw the black pieces
                     game_display.blit(self.black_pieces[piece_type], (self.cell_size * y, self.cell_size * (7 - x)))
 
 

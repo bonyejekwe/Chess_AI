@@ -8,7 +8,7 @@ import time
 import math
 import random
 from pieces import *
-from board import Board, NoKingError
+from board import Board, NoKingError, InvalidBoardMoveError
 from profiler import Profiler
 
 
@@ -55,11 +55,13 @@ class AI:
                     constant_dev.append(p.eval[y][x])
 
                 if not isinstance(p, Pawn):
-                    piece_development.append(len(p.legal_moves()))
-                worth_weights.append(50 * p.get_worth())
+                    piece_development.append(len(p.legal_moves()) * p.get_worth() / 100)
+                worth_weights.append(p.get_worth())
 
             score = sum(worth_weights)
-            score += (sum(diminishing_dev) / num_moves) + (sum(constant_dev)) + (15 * sum(piece_development))
+            score += sum(diminishing_dev) + (sum(constant_dev))
+            #score += (sum(diminishing_dev) / num_moves) + (sum(constant_dev))
+            #score += 15 * sum(piece_development)
             scores.append(score)
 
         return scores[0] - scores[1]  # AI score - other score
@@ -123,6 +125,7 @@ class MinimaxAI(AI):
         :param maximizing_player: bool representing whether the AI's team is maximizing their score at the current depth
         :return: A tuple with best move and best evaluation"""
         # base case: depth = 0
+        l = []
         if depth == 0 or board.is_game_over():
             return None, self.scoring(board, self._team)
 
@@ -138,6 +141,7 @@ class MinimaxAI(AI):
 
                 # make a recursive call to minimax to find the best evaluation at a specified depth
                 curr_eval = self.minimax(board, depth - 1, alpha, beta, False)[1]
+                l.append((move, curr_eval))
 
                 # unmake the move on the board
                 board.undo_move()
@@ -151,7 +155,7 @@ class MinimaxAI(AI):
 
                 if beta <= alpha:
                     break
-            return best_move, max_eval
+            return best_move, max_eval, l
 
         else:
             min_eval = float('inf')
@@ -162,6 +166,7 @@ class MinimaxAI(AI):
 
                 # make a recursive call to minimax to find the best evaluation at a specified depth
                 curr_eval = self.minimax(board, depth - 1, alpha, beta, True)[1]
+                l.append((move, curr_eval))
 
                 # unmake the move on the board
                 board.undo_move()
@@ -175,12 +180,18 @@ class MinimaxAI(AI):
 
                 if beta <= alpha:
                     break
-            return best_move, min_eval
+            return best_move, min_eval, l
 
     @Profiler.profile
     def make_move(self, board: Board):
         """Choose (make a weighted choice) a move for the AI to make and make the move. Takes as input a board object"""
-        start_pos, end_pos = self.minimax(board, self.max_depth, self.alpha, self.beta, True)[0]  # minimax
+        print(self.scoring(board, self.get_team()), board.get_current_move_count())
+        m = self.minimax(board, self.max_depth, self.alpha, self.beta, True)  # minimax
+        start_pos, end_pos = m[0]
+        l = sorted(m[2], key=lambda x: x[1], reverse=True)
+        # start_pos, end_pos, l = self.minimax(board, self.max_depth, self.alpha, self.beta, True)[0]  # minimax
+        for j in l:
+            print(j)
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
         print(board)
@@ -227,21 +238,15 @@ class Node:
             return self
 
         board = self.board
-        if self.parent is None:  # is the root node
-            for move in AI.format_legal_moves(board):
-                board.move_piece(move[0], move[1])
-                board.switch_turn()
+        for move in AI.format_legal_moves(board):
+            board.move_piece(move[0], move[1])
+            board.switch_turn()
+            if self.parent is None:  # is the root node
                 self.children.append(Node(board, move, self, move))
-                board.undo_move()
-                board.switch_turn()
-
-        else:  # has a parent
-            for move in AI.format_legal_moves(board):
-                board.move_piece(move[0], move[1])
-                board.switch_turn()
+            else:
                 self.children.append(Node(board, move, self, self.first_move))
-                board.undo_move()
-                board.switch_turn()
+            board.undo_move()
+            board.switch_turn()
 
         return random.choice(self.children)  # random node
 
@@ -302,13 +307,15 @@ class MCTSAI(AI):
         i = 0
         while time.time() - start < 5:  # 0.9 seconds
             n = root
+            print('4', time.time() - start)
             while not n.is_leaf_node():
                 n = n.select_node()
+            print('5', time.time() - start)
             if n.visits != 0:  # if leaf node not visited yet, then expand it
                 n = n.expand_node()
-            # print('6', time.time() - start)
+            print('6', time.time() - start)
             result = n.simulation(start, self._team)
-            # print('7', time.time() - start)
+            print('7', time.time() - start)
             n.backpropogate(result)
             i += 1
         print(i)

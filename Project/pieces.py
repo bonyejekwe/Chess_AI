@@ -88,7 +88,7 @@ class Pawn(Piece):
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
-        self._worth = 1
+        self._worth = 100
         if color == 1:
             self._name = 'white_pawn'
             self.eval = white_pawn_dev
@@ -117,7 +117,7 @@ class Knight(Piece):
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
-        self._worth = 3
+        self._worth = 300
         self._name = 'knight'
         if color == 1:
             self.eval = white_knight_dev
@@ -141,7 +141,7 @@ class Bishop(Piece):
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
-        self._worth = 3
+        self._worth = 300
         self._name = 'bishop'
         if color == 1:
             self.eval = white_bishop_dev
@@ -164,7 +164,7 @@ class Rook(Piece):
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
-        self._worth = 5
+        self._worth = 500
         self._name = 'rook'
         if color == 1:
             self.eval = white_rook_dev
@@ -187,7 +187,7 @@ class Queen(Piece):
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
-        self._worth = 9
+        self._worth = 900
         self._name = 'queen'
         if color == 1:
             self.eval = white_queen_dev
@@ -211,7 +211,7 @@ class King(Piece):
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)
-        self._worth = 90
+        self._worth = 20000
         self._name = 'king'
         if color == 1:
             self.eval = white_king_dev

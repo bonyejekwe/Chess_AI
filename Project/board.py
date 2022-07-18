@@ -13,7 +13,7 @@ class NoKingError(Exception):
         super().__init__(f"No king found of color {color}")
 
 
-class InvalidMoveError(Exception):
+class InvalidBoardMoveError(Exception):
 
     def __init__(self, pos1, pos2):
         super().__init__(f"The move {pos1} to {pos2} is not a legal move.")
@@ -241,7 +241,7 @@ class Board:
         # Note: legal moves shows all possible moves for the team whose turn it is
         if check:
             if (pos1 not in self.legal_moves().keys()) or (pos2 not in self.legal_moves()[pos1]):
-                raise InvalidMoveError(pos1, pos2)
+                raise InvalidBoardMoveError(pos1, pos2)
 
         self._moves_list.append((pos1, pos2))  # add move to list of moves
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty
