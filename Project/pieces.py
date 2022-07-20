@@ -15,8 +15,6 @@ class InvalidMoveError(Exception):
 class Piece:
 
     def __init__(self, xpos, ypos, color: int):
-        self._original_xpos = xpos
-        self._original_ypos = ypos
         self._xpos = xpos
         self._ypos = ypos
         self._color = color
@@ -24,15 +22,10 @@ class Piece:
         self.num_moves = 0  # number of times piece was moved
         self._all_legal_moves = all_legal_moves_dict
         self._name = 'piece'
-        # self._piece_legal_moves = 0#set()
 
     def get_color(self):
         """:return the color of the piece"""
         return self._color  # if self._color == 1: # return "white" # else: # return "black"
-
-    def original_position(self):
-        """:return the original position of the piece"""
-        return self._original_xpos, self._original_ypos
 
     def get_position(self):
         """:return the current position of the piece"""
@@ -43,10 +36,8 @@ class Piece:
         return self._worth
 
     def get_was_moved(self):
-        """
-        Check if the piece was moved from the piece
-        :return whether the piece was moved or not
-        """
+        """Check if the piece was moved from the piece
+        :return whether the piece was moved or not"""
         return self.num_moves != 0
 
     def criteria(self, x, y):
@@ -70,10 +61,9 @@ class Piece:
         Inherited by all of the pieces to evaluate each piece's respective criteria"""
         return self._all_legal_moves[self._name][self._ypos][self._xpos]
 
-    # @Profiler.profile
     def can_move_to(self, new_xpos, new_ypos):
         """Return true if piece can move to (new_xpos, new_ypos), false otherwise"""
-        return (new_xpos, new_ypos) in self._all_legal_moves[self._name][self._ypos][self._xpos]  # self.legal_moves()
+        return (new_xpos, new_ypos) in self._all_legal_moves[self._name][self._ypos][self._xpos]
 
     def revert(self, last_xpos, last_ypos):
         """revert a piece back to its previous position (new_xpos, new_ypos). Decrement the was_moved variable"""
@@ -83,8 +73,6 @@ class Piece:
 
 
 class Pawn(Piece):
-
-    """The movement according on color is based on: "white" = 1, "black" = -1 for simplicity"""
 
     def __init__(self, xpos, ypos, color):
         super().__init__(xpos, ypos, color)

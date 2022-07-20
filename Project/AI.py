@@ -16,7 +16,6 @@ class AI:
 
     def __init__(self, color: int):
         self._team = color
-        self._legal_moves = []
 
     @staticmethod
     @Profiler.profile
@@ -71,18 +70,15 @@ class AI:
         return self._team
 
     @staticmethod
+    #@Profiler.profile
     def format_legal_moves(board: Board):
         """Retrieve the legal moves for the AI. Return as a list of tuples of tuples. Takes as input a board object."""
         all_moves = []
         d = board.legal_moves()  # key = piece position : values = list of possible next moves (tuples)
         for pos in d:
-            all_moves += [(pos, val) for val in d[pos]]  # ((x1, y1), (x2, y2)): move: p1 -> p2
+            for val in d[pos]:
+                all_moves.append((pos, val))  # ((x1, y1), (x2, y2)): move: p1 -> p2
         return all_moves
-
-    def all_legal_moves(self, board: Board):
-        """Set the formatted legal moves for the AI. Takes as input a board object"""
-        all_moves = self.format_legal_moves(board)
-        self._legal_moves = all_moves
 
     @staticmethod
     def num_pos_to_letter_pos(position: tuple) -> tuple:
@@ -96,7 +92,7 @@ class AI:
     @Profiler.profile
     def make_move(self, board: Board):
         """Choose (make a weighted choice) a move for the AI to make and make the move. Takes as input a board object"""
-        moves_dict = {m: 1 for m in self._legal_moves}
+        moves_dict = {m: 1 for m in self.format_legal_moves(board)}
         lis = [e for e in list(moves_dict.items())]
         moves, weights = [elem[0] for elem in lis], [elem[1] for elem in lis]
         if min(weights) < 0:
@@ -129,7 +125,8 @@ class MinimaxAI(AI):
         if depth == 0 or board.is_game_over():
             return None, self.scoring(board, self._team)
 
-        moves = self.format_legal_moves(board)
+        moves = self.format_legal_moves(board)[::-1]
+        #moves = self.order_legal_moves(board)[::-1]
         best_move = moves[0]
 
         if maximizing_player:
@@ -141,11 +138,12 @@ class MinimaxAI(AI):
 
                 # make a recursive call to minimax to find the best evaluation at a specified depth
                 curr_eval = self.minimax(board, depth - 1, alpha, beta, False)[1]
-                l.append((move, curr_eval))
 
                 # unmake the move on the board
                 board.undo_move()
                 board.switch_turn()
+
+                l.append((move, curr_eval, type(board.get_piece_from_position(move[0]))))
 
                 if curr_eval > max_eval:
                     max_eval = curr_eval
@@ -166,11 +164,12 @@ class MinimaxAI(AI):
 
                 # make a recursive call to minimax to find the best evaluation at a specified depth
                 curr_eval = self.minimax(board, depth - 1, alpha, beta, True)[1]
-                l.append((move, curr_eval))
 
                 # unmake the move on the board
                 board.undo_move()
                 board.switch_turn()
+
+                l.append((move, curr_eval, type(board.get_piece_from_position(move[0]))))
 
                 if curr_eval < min_eval:
                     min_eval = curr_eval
@@ -185,13 +184,16 @@ class MinimaxAI(AI):
     @Profiler.profile
     def make_move(self, board: Board):
         """Choose (make a weighted choice) a move for the AI to make and make the move. Takes as input a board object"""
-        print(self.scoring(board, self.get_team()), board.get_current_move_count())
+        #print('d', self.format_legal_moves(board)[::-1], 'f')
         m = self.minimax(board, self.max_depth, self.alpha, self.beta, True)  # minimax
         start_pos, end_pos = m[0]
-        l = sorted(m[2], key=lambda x: x[1], reverse=True)
+        #for j in m[2]:
+        #    print(j)
+        #print("'")
+        #l = sorted(m[2], key=lambda x: x[1], reverse=True)
         # start_pos, end_pos, l = self.minimax(board, self.max_depth, self.alpha, self.beta, True)[0]  # minimax
-        for j in l:
-            print(j)
+        #for j in l:
+        #    print(j)
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
         print(board)

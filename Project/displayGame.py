@@ -170,8 +170,7 @@ class PlayGame:
                 if self.board.is_in_check(self.board.get_current_turn()):  # Check if a player is in check
                     print(f'{self.board.get_current_turn()} is in check!!!')
 
-                game_ai.all_legal_moves(self.board)  # Make the AI move
-                game_ai.make_move(self.board)
+                game_ai.make_move(self.board)  # Make the AI move
 
                 if self.board.is_game_over():  # Check if the game is over
                     return self.board.winner()

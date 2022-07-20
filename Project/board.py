@@ -228,25 +228,23 @@ class Board:
 
     @Profiler.profile
     def move_piece(self, pos1: tuple, pos2: tuple, check=True) -> None:
-        """
-        Moves a piece from one position to another, checking the legality and correctness of the move
+        """Moves a piece from one position to another, checking legality of move if specified
         :param pos1: A tuple containing int positions for x and y. Current Position
         :param pos2: A tuple containing int positions for x and y. Desired Position
         :param check: whether should check if in legal moves (can make False if only making move from legal moves)
-        :return: The piece captured, or None if no piece is captured
-        """
-        piece1 = self.get_piece_from_position(pos1)  # can be piece or none
-        piece2 = self.get_piece_from_position(pos2)  # can be piece or none
-
+        :return: The piece captured, or None if no piece is captured"""
         # Note: legal moves shows all possible moves for the team whose turn it is
         if check:
             if (pos1 not in self.legal_moves().keys()) or (pos2 not in self.legal_moves()[pos1]):
                 raise InvalidBoardMoveError(pos1, pos2)
 
         self._moves_list.append((pos1, pos2))  # add move to list of moves
+
+        piece1 = self.get_piece_from_position(pos1)  # can be piece or none
         if self.is_position_empty(pos2):  # if the place where the piece is trying to be moved to is empty
             self._move_to_space(piece1, pos2[0], pos2[1])  # make a move, promote pawn or castle if needed
         else:  # if the place moving to is not empty; capturing from other team
+            piece2 = self.get_piece_from_position(pos2)  # can be piece or none
             self._capture_piece(piece1, piece2)  # return the captured piece
 
     def undo_move(self):
@@ -262,7 +260,6 @@ class Board:
         else:  # a capture
             self._undo_capture_piece(piece1, captured_piece, pos1, promoted)
 
-    # @Profiler.profile
     def is_piece_in_the_way(self, pos1x: int, pos1y: int, pos2x: int, pos2y: int) -> bool:
         """
         Checks if there are any pieces in the way between two different positions on the board
@@ -315,26 +312,19 @@ class Board:
         self._legal_moves = {}
 
     def get_piece_from_position(self, position: tuple) -> Union[Piece, None]:
-        """
-        Returns a piece object or none from the board, raises error if the desired piece is neither a piece or empty
+        """Returns a piece object or none from the board, raises error if out of bounds error
         :param position: A tuple of integers of the indices of the position desired
         :return: A piece object or None if no object is returned
         """
         try:  # ensures the position is actually on the board
-            piece = self._board[position[1]][position[0]]
+            return self._board[position[1]][position[0]]
         except IndexError:
             raise IndexError("The desired position is out of bounds of the board")
 
-        if not (isinstance(piece, Piece) or piece is None):  # makes sure position actually holds a piece or is empty
-            raise ValueError("Piece should not be of type {t} and value {v}".format(t=type(piece), v=piece))
-        return piece
-
     def is_position_empty(self, position: tuple) -> bool:
-        """
-        Checks if a desired position is empty, returns true if Empty
+        """Checks if a desired position is empty, returns true if Empty
         :param position: Tuple of indices a position which you would like to check if a piece exists there
-        :return: True if position is empty, false if not
-        """
+        :return: True if position is empty, false if not"""
         try:
             if self._board[position[1]][position[0]] is None:
                 return True
@@ -348,17 +338,13 @@ class Board:
             raise IndexError("The desired position is out of bounds of the board")
 
     def validate_turn_color(self, piece: Piece) -> bool:
-        """
-        Checks if the piece at the position is of the same color as the current color's turn
+        """Checks if the piece at the position is of the same color as the current color's turn
         :param piece: The piece you would like to check
-        :return: True if the color and turn match up, false if not
-        """
+        :return: True if the color and turn match up, false if not"""
         return self._turn == piece.get_color()
 
     def get_board(self) -> list:
-        """
-        :return: The board array
-        """
+        """:return: The board array"""
         return self._board
 
     def get_captured(self) -> list:
@@ -374,10 +360,8 @@ class Board:
         return self._move_count
 
     def update_move_count(self, adding=True):
-        """
-        Updates the current move count
-        :param adding: adds if adding is true, if false it decreases move count
-        """
+        """Updates the current move count
+        :param adding: adds if adding is true, if false it decreases move count"""
         if adding:
             self._move_count += 1
         else:
@@ -411,7 +395,7 @@ class Board:
 
         return False
 
-    @Profiler.profile
+    # @Profiler.profile
     def is_in_check(self, c: int):
         """Returns where a specified team is in check or not
         :param c: the color corresponding to the specified team
@@ -430,15 +414,6 @@ class Board:
                     return True
 
         return False
-
-    @staticmethod
-    def _is_white(piece: Piece) -> bool:
-        """
-        Checks if a certain piece is white or not
-        :param piece: the piece which you would like to check if it is white
-        :return: True if white, false otherwise
-        """
-        return isinstance(piece, Piece) and piece.get_color() == 1
 
     def castling_criteria(self, king, castle_move):
         """Return true if king can castle"""
@@ -479,20 +454,15 @@ class Board:
 
     @Profiler.profile
     def legal_moves(self) -> dict:
-        """
-        Finds all possible legal moves of a certain color and returns them as a dictionary. Where the keys are
-        a tuple as a position, and the values is a list of tuples each being a position. Only finds the legal moves of
-        the pieces turn it is. If it is white's turn it only checks white's legal moves
-        :return: Dictionary, key is tuple of position of a piece, value is a list of tuples as positions to where
-        they key can move to.
-        """
+        """Finds all possible legal moves for the team whose turn it is.
+        :return: Dictionary, key is position tuple for a piece, value is list of tuples of positions it can move to."""
         if self._legal_moves != {}:
             return self._legal_moves
 
         possible_moves = collections.defaultdict(list)
         consider = self.get_pieces_left(self._turn)
 
-        for piece1, pos1 in consider.items():
+        for piece1, pos1 in list(consider.items()):
             pos1x, pos1y = pos1  # = consider[piece1]
             for e1, e2 in piece1.legal_moves():
                 if not self.is_piece_in_the_way(pos1x, pos1y, e1, e2):
@@ -508,23 +478,12 @@ class Board:
                     if isinstance(piece2, King):  # don't add moves that capture the king
                         continue
 
-                    # TODO update this to use self.move_piece(pos1, (e1, e2), check=False) and self.undo_move()
-                    # TODO problem is that dictionary items change during iteration
-                    self.update_pieces(piece1, e1, e2)  # temporarily make the move
-                    if isinstance(piece2, Piece):  # temporarily delete piece from dict if necessary
-                        self.delete_piece(piece2)
+                    self.move_piece(pos1, (e1, e2), check=False)  # temporarily make the move
 
-                    self._board[pos1y][pos1x], self._board[e2][e1] = None, self._board[pos1y][pos1x]
-                    self.update_move_count()
-
-                    if not self.is_in_check(self._turn):
+                    if not self.is_in_check(self._turn):  # add to list if legal
                         possible_moves[(pos1x, pos1y)].append((e1, e2))
 
-                    self.update_pieces(piece1, pos1x, pos1y, revert=True)  # unmake the temporary move
-                    if isinstance(piece2, Piece):  # add back piece to dict if necessary
-                        self.add_piece(piece2)
-                    self._board[pos1y][pos1x], self._board[e2][e1] = self._board[e2][e1], piece2
-                    self.update_move_count(False)
+                    self.undo_move()  # unmake the temporary move
 
         self._legal_moves = possible_moves
         return possible_moves
@@ -538,12 +497,9 @@ class Board:
         return self.is_in_check(self._turn) and (len(self.legal_moves()) == 0)
 
     def get_king_position(self, color: int) -> tuple:
-        """
-        Returns the position of the king as a tuple (x,y)
+        """Returns the position of the king as a tuple (x,y)
         :param color: 1 or -1 for white or black respectively
-        :return: Tuple of the position of the king of specified color
-        """
-        # return [pos for piece, pos in self._pieces_left[color].items() if isinstance(piece, King)][0]
+        :return: Tuple of the position of the king of specified color"""
         consider = self._pieces_left[color].items()
         for piece, pos in consider:
             if isinstance(piece, King):
@@ -552,11 +508,8 @@ class Board:
 
     @Profiler.profile
     def is_game_over(self):
-        """
-        Determines whether or not the game is over based on if the team can no longer move, or if the draw states have
-        been reached
-        :return: True if the game is over, False if the game is not over
-        """
+        """]Determines if game is over based on if the team can no longer move, or if game is a draw
+        :return: True if the game is over, False if the game is not over"""
         if len(self.legal_moves()) == 0:
             print('game over')
             return True
