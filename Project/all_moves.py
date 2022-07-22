@@ -1,4 +1,5 @@
 
+import random
 # all_moves.py: meta dictionary storing all the information about all moves from all positions for each piece
 
 # dict = {key=piece_name, value={key=ypos, value={key=xpos, value=[list of possible moves from position]}}}
@@ -6,3 +7,8 @@ all_legal_moves_dict = {'black_pawn': {0: {0: set(), 1: set(), 2: set(), 3: set(
 
 # all_positions: a SINGLE list (of len() = 64) of all board positions to filter piece legal moves
 all_positions = [(i % 8, i // 8) for i in range(64)]  # [(0, 0), (1, 0), (2, 0), ...  (5, 7), (6, 7), (7, 7)]
+# all_positions_fen = [(i % 8, 7 - (i // 8)) for i in range(64)]  # [(0, 7), (1, 7), (2, 7), ..  (5, 0), (6, 0), (7, 0)]
+
+
+# table for each piece type indexed by position
+zobrist_table = [[[random.randint(1, 2**64 - 1) for i in range(12)] for j in range(8)] for k in range(8)]

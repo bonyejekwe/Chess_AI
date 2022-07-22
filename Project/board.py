@@ -4,7 +4,7 @@ from pieces import *
 from typing import Union
 import collections
 from profiler import Profiler
-from all_moves import all_positions
+from all_moves import all_positions, zobrist_table
 
 
 class NoKingError(Exception):
@@ -246,6 +246,7 @@ class Board:
         else:  # if the place moving to is not empty; capturing from other team
             piece2 = self.get_piece_from_position(pos2)  # can be piece or none
             self._capture_piece(piece1, piece2)  # return the captured piece
+        self.switch_turn()
 
     def undo_move(self):
         """Unmake the last move (pos1, pos2) from the board"""
@@ -259,6 +260,7 @@ class Board:
             self._undo_move_to_space(piece1, pos1, promoted)
         else:  # a capture
             self._undo_capture_piece(piece1, captured_piece, pos1, promoted)
+        self.switch_turn()
 
     def is_piece_in_the_way(self, pos1x: int, pos1y: int, pos2x: int, pos2y: int) -> bool:
         """
@@ -480,7 +482,7 @@ class Board:
 
                     self.move_piece(pos1, (e1, e2), check=False)  # temporarily make the move
 
-                    if not self.is_in_check(self._turn):  # add to list if legal
+                    if not self.is_in_check(-1 * self._turn):  # add to list if legal
                         possible_moves[(pos1x, pos1y)].append((e1, e2))
 
                     self.undo_move()  # unmake the temporary move
@@ -533,3 +535,55 @@ class Board:
                 return self._turn
         else:
             return 0
+
+    @Profiler.profile
+    def fen_hash(self):
+        """Board hashing using modified Forsyth-Edwards Notation"""
+        fen = ""
+        for i in range(7, -1, -1):  # 7, 6, ..., 1, 0
+            k = 0
+            for j in self._board[i]:
+                if isinstance(j, Piece):
+                    if k > 0:
+                        fen += str(k)
+                    k = 0
+                    fen += str(j)
+                else:
+                    k += 1
+
+            if k > 0:
+                fen += str(k)
+
+        if self._turn == 1:
+            fen += "w"
+        else:
+            fen += "b"
+
+        white_king = self.get_piece_from_position((4, 0))
+        if isinstance(white_king, King) and not white_king.get_was_moved():
+            r = self.get_piece_from_position((7, 0))
+            if isinstance(r, Rook) and not r.get_was_moved():
+                fen += "K"
+            r = self.get_piece_from_position((0, 0))
+            if isinstance(r, Rook) and not r.get_was_moved():
+                fen += "Q"
+
+        black_king = self.get_piece_from_position((4, 7))
+        if isinstance(black_king, King) and not black_king.get_was_moved():
+            r = self.get_piece_from_position((7, 7))
+            if isinstance(r, Rook) and not r.get_was_moved():
+                fen += "k"
+            r = self.get_piece_from_position((0, 7))
+            if isinstance(r, Rook) and not r.get_was_moved():
+                fen += "q"
+
+        return fen
+
+    def zobrist_hash(self):
+        """Zobrist hashing"""
+        z_hash = 0
+        for x, y in all_positions:
+            p = self._board[y][x]
+            if isinstance(p, Piece):
+                z_hash ^= zobrist_table[y][x][p.get_idx()]
+        return z_hash

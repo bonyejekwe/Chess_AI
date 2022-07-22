@@ -16,17 +16,23 @@ class AI:
 
     def __init__(self, color: int):
         self._team = color
+        self.fen_hashing = {}
+        self.transpositions = 0
+        self.all_pos = []
 
-    @staticmethod
+    #@staticmethod
     @Profiler.profile
-    def scoring(board: Board, color: int) -> int:
-        """
-        Generalized scoring system: score is positive if white is winning and negative if black
+    def scoring(self, board: Board, color: int) -> int:
+        """Generalized scoring system: score is positive if white is winning and negative if black
          is winning, the magnitude shows by how much one side is winning
         :param board: The board (represented as an 8x8 list of lists containing piece objects)
         :param color: The team of the side in question
-        :return: A generalized score (int) for the difference in total piece worth for each side.
-         """
+        :return: A generalized score (int) for the difference in total piece worth for each side."""
+        fen = board.fen_hash()
+        if fen in self.fen_hashing.keys():
+            self.transpositions += 1
+            return self.fen_hashing[fen]
+
         try:
             if board.checkmate():
                 # large negative if AI team in checkmate, positive otherwise
@@ -63,14 +69,15 @@ class AI:
             #score += 15 * sum(piece_development)
             scores.append(score)
 
-        return scores[0] - scores[1]  # AI score - other score
+        score = scores[0] - scores[1]
+        self.fen_hashing[fen] = score
+        return score  # AI score - other score
 
     def get_team(self):
         """:return: The team the AI is"""
         return self._team
 
     @staticmethod
-    #@Profiler.profile
     def format_legal_moves(board: Board):
         """Retrieve the legal moves for the AI. Return as a list of tuples of tuples. Takes as input a board object."""
         all_moves = []
@@ -109,7 +116,7 @@ class MinimaxAI(AI):
         super().__init__(color)
         self.alpha = -1 * float('inf')
         self.beta = float('inf')
-        self.max_depth = 3
+        self.max_depth = 1
 
     @Profiler.profile
     def minimax(self, board: Board, depth: int, alpha: float, beta: float, maximizing_player: bool):
@@ -126,7 +133,6 @@ class MinimaxAI(AI):
             return None, self.scoring(board, self._team)
 
         moves = self.format_legal_moves(board)[::-1]
-        #moves = self.order_legal_moves(board)[::-1]
         best_move = moves[0]
 
         if maximizing_player:
@@ -134,14 +140,13 @@ class MinimaxAI(AI):
             for move in moves:
                 # make the move on the board
                 board.move_piece(move[0], move[1], check=False)
-                board.switch_turn()
 
                 # make a recursive call to minimax to find the best evaluation at a specified depth
                 curr_eval = self.minimax(board, depth - 1, alpha, beta, False)[1]
+                self.all_pos.append((move, curr_eval))
 
                 # unmake the move on the board
                 board.undo_move()
-                board.switch_turn()
 
                 l.append((move, curr_eval, type(board.get_piece_from_position(move[0]))))
 
@@ -160,14 +165,13 @@ class MinimaxAI(AI):
             for move in moves:
                 # make the move on the board
                 board.move_piece(move[0], move[1], check=False)
-                board.switch_turn()
 
                 # make a recursive call to minimax to find the best evaluation at a specified depth
                 curr_eval = self.minimax(board, depth - 1, alpha, beta, True)[1]
+                self.all_pos.append((move, curr_eval))
 
                 # unmake the move on the board
                 board.undo_move()
-                board.switch_turn()
 
                 l.append((move, curr_eval, type(board.get_piece_from_position(move[0]))))
 
@@ -185,8 +189,12 @@ class MinimaxAI(AI):
     def make_move(self, board: Board):
         """Choose (make a weighted choice) a move for the AI to make and make the move. Takes as input a board object"""
         #print('d', self.format_legal_moves(board)[::-1], 'f')
+        #self.fen_hashing = {}
         m = self.minimax(board, self.max_depth, self.alpha, self.beta, True)  # minimax
         start_pos, end_pos = m[0]
+        print('t', self.transpositions)
+        print('h', len(self.fen_hashing))
+        print('a', len(self.all_pos))
         #for j in m[2]:
         #    print(j)
         #print("'")
@@ -242,13 +250,11 @@ class Node:
         board = self.board
         for move in AI.format_legal_moves(board):
             board.move_piece(move[0], move[1])
-            board.switch_turn()
             if self.parent is None:  # is the root node
                 self.children.append(Node(board, move, self, move))
             else:
                 self.children.append(Node(board, move, self, self.first_move))
             board.undo_move()
-            board.switch_turn()
 
         return random.choice(self.children)  # random node
 
@@ -262,14 +268,12 @@ class Node:
 
             # make move on the board
             self.board.move_piece(move[0], move[1])
-            self.board.switch_turn()
             i += 1
 
         w = AI.scoring(self.board, team)
 
         for _ in range(i):
             self.board.undo_move()
-            self.board.switch_turn()
         self.board._legal_moves = {}
 
         return w
@@ -330,3 +334,116 @@ class MCTSAI(AI):
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
         print(board)
+
+
+class IterativeDeepeningAI(MinimaxAI):
+
+    def __init__(self, color: int):
+        super().__init__(color)
+        self.max_depth = 4
+        self.move_ordering = {}
+
+    def ids(self, board: Board, depth: int):
+        """Run iterative deepening search on a board to a specified depth"""
+        self.move_ordering = {}
+        print('starting iterations')
+
+        for i in range(1, depth):  # [1, 2, ... depth]
+            self.minimax(board, i, self.alpha, self.beta, True)
+            print('iter depth', i)
+            #print('l', len(self.move_ordering))
+            #print(self.move_ordering[board.fen_hash()][:5])
+
+        result = self.minimax(board, depth, self.alpha, self.beta, True)
+        print('iter depth', depth)
+        #print('l', len(self.move_ordering))
+        #print(self.move_ordering[board.fen_hash()][:5])
+        return result
+
+    @Profiler.profile
+    def minimax(self, board: Board, depth: int, alpha: float, beta: float, maximizing_player: bool):
+        """Implement minimax algorithm: the best move for the maximizing color looking ahead depth moves on the board
+        :param board: The current board being evaluated
+        :param depth: The current depth being evaluated
+        :param alpha: value for alpha
+        :param beta: value for beta
+        :param maximizing_player: bool representing whether the AI's team is maximizing their score at the current depth
+        :return: A tuple with best move and best evaluation"""
+        ordered_moves = []
+        fen = board.fen_hash()
+
+        if depth == 0 or board.is_game_over():  # base case: depth = 0
+            return None, self.scoring(board, self._team)
+
+        if fen in self.move_ordering.keys():
+            moves = self.move_ordering[fen]
+        else:
+            moves = self.format_legal_moves(board)
+
+        best_move = moves[0]
+
+        if maximizing_player:
+            max_eval = -1 * float('inf')
+            while moves:  # while moves != []
+                move = moves.pop()
+
+                # make the move on the board
+                board.move_piece(move[0], move[1], check=False)
+
+                # make a recursive call to minimax to find the best evaluation at a specified depth
+                curr_eval = self.minimax(board, depth - 1, alpha, beta, False)[1]
+                ordered_moves.append((move, curr_eval))
+
+                # unmake the move on the board
+                board.undo_move()
+
+                if curr_eval > max_eval:
+                    max_eval = curr_eval
+                    best_move = move
+
+                alpha = max(alpha, curr_eval)
+
+                if beta <= alpha:
+                    break
+
+            ordered_moves = sorted(ordered_moves, key=lambda x: x[1])
+            self.move_ordering[fen] = moves + [i[0] for i in ordered_moves]
+            return best_move, max_eval
+
+        else:
+            min_eval = float('inf')
+            while moves:  # moves != []:
+                move = moves.pop()
+                # make the move on the board
+                board.move_piece(move[0], move[1], check=False)
+
+                # make a recursive call to minimax to find the best evaluation at a specified depth
+                curr_eval = self.minimax(board, depth - 1, alpha, beta, True)[1]
+                ordered_moves.append((move, curr_eval))
+
+                # unmake the move on the board
+                board.undo_move()
+
+                if curr_eval < min_eval:
+                    min_eval = curr_eval
+                    best_move = move
+
+                beta = min(beta, curr_eval)
+
+                if beta <= alpha:
+                    break
+
+            ordered_moves = sorted(ordered_moves, key=lambda x: x[1])
+            self.move_ordering[fen] = moves + [i[0] for i in ordered_moves]
+            return best_move, min_eval
+
+    @Profiler.profile
+    def make_move(self, board: Board):
+        """Choose (make a weighted choice) a move for the AI to make and make the move. Takes as input a board object"""
+        # start_pos, end_pos = self.ids(board, self.max_depth, self.alpha, self.beta, True, None)
+        start_pos, end_pos = self.ids(board, self.max_depth)[0]  # minimax
+        board.move_piece(start_pos, end_pos)  # move using chess letter notation
+        print(f"moving from {start_pos} to {end_pos}")
+        print(board)
+        # print(board.fen_hash())
+    pass

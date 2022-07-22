@@ -70,9 +70,9 @@ class PlayGame:
         ai_team = -1 * side  # Set the ai's side
 
         # Get the desired AI type and define AI
-        ai_types = {0: AI, 1: MinimaxAI, 2: MCTSAI}
-        ai_type = input("Select AI to play against {0: AI, 1: MinimaxAI, 2: MCTSAI}: ")
-        if ai_type == "0" or ai_type == "1" or ai_type == "2":
+        ai_types = {0: AI, 1: MinimaxAI, 2: MCTSAI, 3: IterativeDeepeningAI}
+        ai_type = input("Select AI to play against {0: AI, 1: MinimaxAI, 2: MCTSAI, 3: IterativeDeepeningAI}: ")
+        if ai_type == "0" or ai_type == "1" or ai_type == "2" or ai_type == "3":
             ai_type = ai_types[int(ai_type)]
             ai = ai_type(ai_team)  # define the AI
         else:
@@ -109,76 +109,58 @@ class PlayGame:
                     # Find the chess coordinates of the chosen position
                     x, y = int(pos[0] / self.cell_size), 7 - int(pos[1] / self.cell_size)
 
-                    # If this is the first piece we have chosen and it is a piece of our color
-                    if (not piece_to_move_chosen) and isinstance(self.board.get_board()[y][x], Piece) and \
-                            self.board.get_board()[y][x].get_color() == side:
+                    if piece_to_move_chosen:  # piece has already been selected
+                        if x != chosen_piece[0] or y != chosen_piece[1]:  # new piece chosen
+                            try:  # Check that the move was valid
+                                self.board.move_piece(tuple(chosen_piece), (x, y))
+                            except InvalidBoardMoveError:
+                                continue  # Exit out of current loop iteration
 
-                        # Change the background color of the cell
-                        rect_dim = (x * self.cell_size, (7 - y) * self.cell_size, self.cell_size, self.cell_size)
-                        pygame.draw.rect(self.display_board, self.chosen_color, rect_dim)
+                            # Find out which color should be used
+                            if (chosen_piece[0] + (7 - chosen_piece[1])) % 2 == 1:
+                                overwrite_color = self.black
+                            else:
+                                overwrite_color = self.white
 
-                        piece_to_move_chosen = True  # Change the variable to true
-                        chosen_piece = [x, y]  # Save the location of the chosen piece
+                            # Change the background color of the last location
+                            rect_dim = (chosen_piece[0] * self.cell_size, (7 - chosen_piece[1]) * self.cell_size,
+                                        self.cell_size, self.cell_size)
+                            pygame.draw.rect(self.display_board, overwrite_color, rect_dim)
 
-                    # Check if a piece has been chosen and the selected tile does not match the chosen piece tile
-                    elif piece_to_move_chosen and (x != chosen_piece[0] or y != chosen_piece[1]):
+                            piece_to_move_chosen = False  # set the piece_to_move_chosen to false
 
-                        try:  # Check that the move was valid using game code
-                            self.board.move_piece(tuple(chosen_piece), (x, y))
-                        except InvalidBoardMoveError:
-                            continue  # Exit out of current loop iteration
+                            if self.board.is_game_over():  # Check if the game is over
+                                return self.board.winner()
 
-                        # Find out which color should be used
-                        if (chosen_piece[0] + (7 - chosen_piece[1])) % 2 == 1:
-                            overwrite_color = self.black
-                        else:
-                            overwrite_color = self.white
+                        else:  # x == chosen_piece[0] and y == chosen_piece[1]
+                            # Find out which color should be used
+                            if (chosen_piece[0] + (7 - chosen_piece[1])) % 2 == 1:
+                                overwrite_color = self.black
+                            else:
+                                overwrite_color = self.white
 
-                        # Change the background color of the last location
-                        rect_dim = (chosen_piece[0] * self.cell_size, (7 - chosen_piece[1]) * self.cell_size,
-                                    self.cell_size, self.cell_size)
-                        pygame.draw.rect(self.display_board, overwrite_color, rect_dim)
+                            # Change the background color of the last location
+                            rect_dim = (chosen_piece[0] * self.cell_size, (7 - chosen_piece[1]) * self.cell_size,
+                                        self.cell_size, self.cell_size)
+                            pygame.draw.rect(self.display_board, overwrite_color, rect_dim)
 
-                        piece_to_move_chosen = False  # set the piece_to_move_chosen to false
-                        self.board.switch_turn()  # Change the current turn
+                            piece_to_move_chosen = False  # Reset the chosen piece variable
 
-                        if self.board.is_game_over():  # Check if the game is over
-                            return self.board.winner()
+                    else:  # no piece chosen before
+                        if isinstance(self.board.get_board()[y][x], Piece) and self.board.get_board()[y][x].get_color() == side:
+                            # Change the background color of the cell to green
+                            rect_dim = (x * self.cell_size, (7 - y) * self.cell_size, self.cell_size, self.cell_size)
+                            pygame.draw.rect(self.display_board, self.chosen_color, rect_dim)
 
-                    elif piece_to_move_chosen and (x == chosen_piece[0] and y == chosen_piece[1]):
-                        # Find out which color should be used
-                        if (chosen_piece[0] + (7 - chosen_piece[1])) % 2 == 1:
-                            overwrite_color = self.black
-                        else:
-                            overwrite_color = self.white
-
-                        # Change the background color of the last location
-                        rect_dim = (chosen_piece[0] * self.cell_size, (7 - chosen_piece[1]) * self.cell_size,
-                                    self.cell_size, self.cell_size)
-                        pygame.draw.rect(self.display_board, overwrite_color, rect_dim)
-
-                        piece_to_move_chosen = False  # Reset the chosen piece variable
+                            piece_to_move_chosen = True  # Change the variable to true
+                            chosen_piece = [x, y]  # Save the location of the chosen piece
 
             game_display.blit(self.display_board, self.display_board.get_rect())  # Fill the display with the board
             self.draw_pieces(game_display)  # Draw the pieces on the board
             pygame.display.update()  # Update the display
 
             if self.board.get_current_turn() == -1 * side:  # If its the computer's turn
-                if self.board.is_game_over():  # Check if the game is over
-                    return self.board.winner()
-
-                if self.board.is_in_check(self.board.get_current_turn()):  # Check if a player is in check
-                    print(f'{self.board.get_current_turn()} is in check!!!')
-
                 game_ai.make_move(self.board)  # Make the AI move
-
-                if self.board.is_game_over():  # Check if the game is over
-                    return self.board.winner()
-
-                if self.board.is_in_check(self.board.get_current_turn()):  # Check if a player is in check
-                    print(f'{self.board.get_current_turn()} is in check!!!')
-
-                self.board.switch_turn()  # Switch the turn
 
         pygame.quit()  # Quit pygame
 

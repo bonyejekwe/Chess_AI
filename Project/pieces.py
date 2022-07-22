@@ -22,10 +22,15 @@ class Piece:
         self.num_moves = 0  # number of times piece was moved
         self._all_legal_moves = all_legal_moves_dict
         self._name = 'piece'
+        self._idx = -1
 
     def get_color(self):
         """:return the color of the piece"""
         return self._color  # if self._color == 1: # return "white" # else: # return "black"
+
+    def get_idx(self):
+        ":return the index of the piece"
+        return self._idx
 
     def get_position(self):
         """:return the current position of the piece"""
@@ -80,9 +85,11 @@ class Pawn(Piece):
         if color == 1:
             self._name = 'white_pawn'
             self.eval = white_pawn_dev
+            self._idx = 0
         else:
             self._name = 'black_pawn'
             self.eval = black_pawn_dev
+            self._idx = 1
 
     def pawn_first_move(self, new_xpos, new_ypos):
         """Returns true if pawn is trying to move 2 spaces for first move"""
@@ -109,8 +116,10 @@ class Knight(Piece):
         self._name = 'knight'
         if color == 1:
             self.eval = white_knight_dev
+            self._idx = 2
         else:
             self.eval = black_knight_dev
+            self._idx = 3
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
@@ -133,8 +142,10 @@ class Bishop(Piece):
         self._name = 'bishop'
         if color == 1:
             self.eval = white_bishop_dev
+            self._idx = 4
         else:
             self.eval = black_bishop_dev
+            self._idx = 5
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
@@ -156,8 +167,10 @@ class Rook(Piece):
         self._name = 'rook'
         if color == 1:
             self.eval = white_rook_dev
+            self._idx = 6
         else:
             self.eval = black_rook_dev
+            self._idx = 7
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
@@ -179,8 +192,10 @@ class Queen(Piece):
         self._name = 'queen'
         if color == 1:
             self.eval = white_queen_dev
+            self._idx = 8
         else:
             self.eval = black_queen_dev
+            self._idx = 9
 
     def criteria(self, x, y):
         """Return true if move to (x, y) fulfills criteria for specific piece based on current position and piece itself
@@ -203,8 +218,10 @@ class King(Piece):
         self._name = 'king'
         if color == 1:
             self.eval = white_king_dev
+            self._idx = 10
         else:
             self.eval = black_king_dev
+            self._idx = 11
 
     def king_castling(self, new_xpos, new_ypos):
         return (not self.get_was_moved()) and (abs(new_xpos - self._xpos) == 2) and (new_ypos == self._ypos)

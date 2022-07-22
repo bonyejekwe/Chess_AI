@@ -129,7 +129,6 @@ def turn(board, ai_lis):  # defaults to no AI for game
     """Run the actual game"""
     while not board.is_game_over():
         move(board, ai_lis)
-        board.switch_turn()
         print(f"Turn #: {board.get_current_move_count()}...")
 
     return board.winner()
