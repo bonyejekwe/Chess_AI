@@ -16,7 +16,7 @@ class AI:
 
     def __init__(self, color: int):
         self._team = color
-        self.fen_hashing = {}
+        self.zob_hashing = {}
         self.transpositions = 0
         self.all_pos = []
 
@@ -28,10 +28,10 @@ class AI:
         :param board: The board (represented as an 8x8 list of lists containing piece objects)
         :param color: The team of the side in question
         :return: A generalized score (int) for the difference in total piece worth for each side."""
-        fen = board.fen_hash()
-        if fen in self.fen_hashing.keys():
+        zob = board.get_zobrist_hash()
+        if zob in self.zob_hashing.keys():
             self.transpositions += 1
-            return self.fen_hashing[fen]
+            return self.zob_hashing[zob]
 
         try:
             if board.checkmate():
@@ -70,7 +70,7 @@ class AI:
             scores.append(score)
 
         score = scores[0] - scores[1]
-        self.fen_hashing[fen] = score
+        self.zob_hashing[zob] = score
         return score  # AI score - other score
 
     def get_team(self):
@@ -116,7 +116,7 @@ class MinimaxAI(AI):
         super().__init__(color)
         self.alpha = -1 * float('inf')
         self.beta = float('inf')
-        self.max_depth = 1
+        self.max_depth = 4
 
     @Profiler.profile
     def minimax(self, board: Board, depth: int, alpha: float, beta: float, maximizing_player: bool):
@@ -193,7 +193,7 @@ class MinimaxAI(AI):
         m = self.minimax(board, self.max_depth, self.alpha, self.beta, True)  # minimax
         start_pos, end_pos = m[0]
         print('t', self.transpositions)
-        print('h', len(self.fen_hashing))
+        print('h', len(self.zob_hashing))
         print('a', len(self.all_pos))
         #for j in m[2]:
         #    print(j)
@@ -351,13 +351,13 @@ class IterativeDeepeningAI(MinimaxAI):
         for i in range(1, depth):  # [1, 2, ... depth]
             self.minimax(board, i, self.alpha, self.beta, True)
             print('iter depth', i)
-            #print('l', len(self.move_ordering))
-            #print(self.move_ordering[board.fen_hash()][:5])
+            print('l', len(self.move_ordering))
+            print(self.move_ordering[board.get_zobrist_hash()][::-1][:5])
 
         result = self.minimax(board, depth, self.alpha, self.beta, True)
         print('iter depth', depth)
-        #print('l', len(self.move_ordering))
-        #print(self.move_ordering[board.fen_hash()][:5])
+        print('l', len(self.move_ordering))
+        print(self.move_ordering[board.get_zobrist_hash()][::-1])
         return result
 
     @Profiler.profile
@@ -370,13 +370,13 @@ class IterativeDeepeningAI(MinimaxAI):
         :param maximizing_player: bool representing whether the AI's team is maximizing their score at the current depth
         :return: A tuple with best move and best evaluation"""
         ordered_moves = []
-        fen = board.fen_hash()
+        zob = board.get_zobrist_hash()
 
         if depth == 0 or board.is_game_over():  # base case: depth = 0
             return None, self.scoring(board, self._team)
 
-        if fen in self.move_ordering.keys():
-            moves = self.move_ordering[fen]
+        if zob in self.move_ordering.keys():
+            moves = self.move_ordering[zob]
         else:
             moves = self.format_legal_moves(board)
 
@@ -407,7 +407,7 @@ class IterativeDeepeningAI(MinimaxAI):
                     break
 
             ordered_moves = sorted(ordered_moves, key=lambda x: x[1])
-            self.move_ordering[fen] = moves + [i[0] for i in ordered_moves]
+            self.move_ordering[zob] = moves + [i[0] for i in ordered_moves]  # worst to best
             return best_move, max_eval
 
         else:
@@ -434,7 +434,7 @@ class IterativeDeepeningAI(MinimaxAI):
                     break
 
             ordered_moves = sorted(ordered_moves, key=lambda x: x[1])
-            self.move_ordering[fen] = moves + [i[0] for i in ordered_moves]
+            self.move_ordering[zob] = moves + [i[0] for i in ordered_moves]  # worst to best
             return best_move, min_eval
 
     @Profiler.profile
@@ -445,5 +445,3 @@ class IterativeDeepeningAI(MinimaxAI):
         board.move_piece(start_pos, end_pos)  # move using chess letter notation
         print(f"moving from {start_pos} to {end_pos}")
         print(board)
-        # print(board.fen_hash())
-    pass

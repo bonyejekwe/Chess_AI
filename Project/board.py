@@ -33,6 +33,8 @@ class Board:
         self._promoted_pawns = []
         self._moves_since_capture_list = []
         self._pieces_left = collections.defaultdict(dict)  # piece references {key=color, val={key=piece, val=pos}}
+        self._zobrist_hash = 0
+        self._zobrist_list = []
 
     def start_game(self):
         """Starts a standard chess game, initializes the board with pieces"""
@@ -56,6 +58,8 @@ class Board:
                 p = self._board[i][j]
                 self._pieces_left[p.get_color()][p] = p.get_position()
 
+        self.zobrist_hash_init()  # initialize zobrist hash
+
     def _start_test_game(self):
         """Starts a game for testing piece movement and game logic. (Testing purposes only!!!)"""
         self._board = [[King(0, 0, 1), None, None, None, None, None, None, None],
@@ -75,6 +79,12 @@ class Board:
             if isinstance(self._board[i][j], Piece):
                 p = self._board[i][j]
                 self._pieces_left[p.get_color()][p] = p.get_position()
+
+        self.zobrist_hash_init()  # initialize zobrist hash
+
+    @Profiler.profile
+    def get_zobrist_hash(self):
+        return self._zobrist_hash
 
     def get_pieces_left(self, color: int) -> dict:
         """
@@ -134,8 +144,10 @@ class Board:
             pos1x, pos2x = 7, 5  # old rook x and new rook x
 
         rook = self.get_piece_from_position((pos1x, pos2y))
+        self._zobrist_list.append((pos1x, pos2y, rook.get_idx()))
         self._board[pos2y][pos2x], self._board[pos2y][pos1x] = rook, None
         self.update_pieces(rook, pos2x, pos2y)
+        self._zobrist_list.append((pos2x, pos2y, rook.get_idx()))
 
     def _move_to_space(self, piece: Piece, pos2x: int, pos2y: int):
         """
@@ -143,6 +155,7 @@ class Board:
         :return deleted pawn if it was promoted, None otherwise
         """
         pos1x, pos1y = piece.get_position()
+        self._zobrist_list.append((pos1x, pos1y, piece.get_idx()))
         if isinstance(piece, Pawn) and (pos2y == 0 or pos2y == 7):
             self._promoted_pawns.append(piece)
             piece = self._pawn_promotion(piece, pos2x, pos2y)  # queen
@@ -150,6 +163,7 @@ class Board:
             self._promoted_pawns.append(None)
             self.update_pieces(piece, pos2x, pos2y)
 
+        self._zobrist_list.append((pos2x, pos2y, piece.get_idx()))
         self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece, None
         self.update_move_count()
         self._moves_since_capture_list.append(False)
@@ -163,12 +177,15 @@ class Board:
         """capture piece2 with piece1"""
         pos1x, pos1y = piece1.get_position()
         pos2x, pos2y = piece2.get_position()
+        self._zobrist_list.append((pos1x, pos1y, piece1.get_idx()))
         if isinstance(piece1, Pawn) and (pos2y == 0 or pos2y == 7):  # Pawn promotion after capture
             self._promoted_pawns.append(piece1)
             piece1 = self._pawn_promotion(piece1, pos2x, pos2y)  # queen
         else:
             self._promoted_pawns.append(None)
             self.update_pieces(piece1, pos2x, pos2y)
+        self._zobrist_list.append((pos2x, pos2y, piece1.get_idx()))
+        self._zobrist_list.append((pos2x, pos2y, piece2.get_idx()))
 
         self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # update positions on the board
         self.delete_piece(piece2)  # delete captured piece
@@ -191,19 +208,22 @@ class Board:
             pos1x, pos2x = 7, 5  # old rook x and new rook x
 
         rook = self.get_piece_from_position((pos2x, pos2y))
+        self._zobrist_list.append((pos2x, pos2y, rook.get_idx()))
         self._board[pos2y][pos2x], self._board[pos2y][pos1x] = None, rook
-        self.update_pieces(rook, pos1x, pos2y, revert=True)  # = (pos1x, pos1y)\
+        self.update_pieces(rook, pos1x, pos2y, revert=True)  # = (pos1x, pos1y)
+        self._zobrist_list.append((pos1x, pos2y, rook.get_idx()))
 
     def _undo_move_to_space(self, piece: Piece, pos1, promoted):
         """make move on board
         :return deleted pawn if it was promoted, None otherwise"""
         pos1x, pos1y = pos1
         pos2x, pos2y = piece.get_position()
+        self._zobrist_list.append((pos2x, pos2y, piece.get_idx()))
         if isinstance(promoted, Pawn):  # need to undo promote (piece is queen):
             piece = self._undo_promotion(promoted, piece)  # pawn
         else:
             self.update_pieces(piece, pos1x, pos1y, revert=True)
-
+        self._zobrist_list.append((pos1x, pos1y, piece.get_idx()))
         self._board[pos2y][pos2x], self._board[pos1y][pos1x] = None, piece
         self.update_move_count(False)
         self._moves_since_capture_list.pop()
@@ -215,11 +235,15 @@ class Board:
         """undo capture piece2 with piece1"""
         pos1x, pos1y = pos1
         pos2x, pos2y = piece1.get_position()  # = captured_piece.get_position()  # piece1=queen
+        self._zobrist_list.append((pos2x, pos2y, piece1.get_idx()))
 
         if isinstance(promoted, Pawn):  # need to undo promote
             piece1 = self._undo_promotion(promoted, piece1)  # pawn
         else:
             self.update_pieces(piece1, pos1x, pos1y, revert=True)  # moves piece to new position
+
+        self._zobrist_list.append((pos1x, pos1y, piece1.get_idx()))
+        self._zobrist_list.append((pos2x, pos2y, captured_piece.get_idx()))
 
         self._board[pos2y][pos2x], self._board[pos1y][pos1x] = captured_piece, piece1  # update positions on the board
         self.add_piece(captured_piece)  # add captured piece
@@ -233,6 +257,7 @@ class Board:
         :param pos2: A tuple containing int positions for x and y. Desired Position
         :param check: whether should check if in legal moves (can make False if only making move from legal moves)
         :return: The piece captured, or None if no piece is captured"""
+        self._zobrist_list = []
         # Note: legal moves shows all possible moves for the team whose turn it is
         if check:
             if (pos1 not in self.legal_moves().keys()) or (pos2 not in self.legal_moves()[pos1]):
@@ -247,9 +272,12 @@ class Board:
             piece2 = self.get_piece_from_position(pos2)  # can be piece or none
             self._capture_piece(piece1, piece2)  # return the captured piece
         self.switch_turn()
+        lis = []  # TODO this
+        self.update_zobrist_hash(self._zobrist_list)
 
     def undo_move(self):
         """Unmake the last move (pos1, pos2) from the board"""
+        self._zobrist_list = []
         pos1, pos2 = self._moves_list.pop()  # get the last move
         piece1 = self.get_piece_from_position(pos2)
 
@@ -261,6 +289,8 @@ class Board:
         else:  # a capture
             self._undo_capture_piece(piece1, captured_piece, pos1, promoted)
         self.switch_turn()
+        lis = []  # TODO this
+        self.update_zobrist_hash(self._zobrist_list)
 
     def is_piece_in_the_way(self, pos1x: int, pos1y: int, pos2x: int, pos2y: int) -> bool:
         """
@@ -579,11 +609,16 @@ class Board:
 
         return fen
 
-    def zobrist_hash(self):
+    def zobrist_hash_init(self):
         """Zobrist hashing"""
-        z_hash = 0
+        self._zobrist_hash = 0
         for x, y in all_positions:
             p = self._board[y][x]
             if isinstance(p, Piece):
-                z_hash ^= zobrist_table[y][x][p.get_idx()]
-        return z_hash
+                self._zobrist_hash ^= zobrist_table[y][x][p.get_idx()]
+
+    def update_zobrist_hash(self, lis):
+        """lis = [(x_pos, y_pos, p_idx), ...]"""
+        for pos in lis:
+            x, y, idx = pos
+            self._zobrist_hash ^= zobrist_table[y][x][idx]
