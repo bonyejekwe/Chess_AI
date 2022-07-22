@@ -87,11 +87,9 @@ class Board:
         return self._zobrist_hash
 
     def get_pieces_left(self, color: int) -> dict:
-        """
-        Will get all of the pieces still on the board as well as their locations of a given color
+        """Will get all of the pieces still on the board as well as their locations of a given color
         :param color: team (1 or -1)
-        :return: A dictionary of all the pieces for that team. {key=piece object, val=position tuple}
-        """
+        :return: A dictionary of all the pieces for that team. {key=piece object, val=position tuple}"""
         return self._pieces_left[color]
 
     def add_piece(self, piece: Piece):
@@ -104,13 +102,11 @@ class Board:
 
     @Profiler.profile
     def update_pieces(self, piece: Piece, xpos: int, ypos: int, revert=False):
-        """
-        Updates self._pieces_left when time a piece is moved
+        """Updates self._pieces_left when time a piece is moved
         :param piece: The piece you would like to update
         :param xpos: The x position of the place you are moving the piece to
         :param ypos: The y position of the place you are moving the piece to
-        :param revert: True if you would like to revert a move
-        """
+        :param revert: True if you would like to revert a move"""
         if revert:
             piece.revert(xpos, ypos)
         else:
@@ -144,10 +140,10 @@ class Board:
             pos1x, pos2x = 7, 5  # old rook x and new rook x
 
         rook = self.get_piece_from_position((pos1x, pos2y))
-        self._zobrist_list.append((pos1x, pos2y, rook.get_idx()))
+        self._update_zobrist_hash(pos1x, pos2y, rook.get_idx())
         self._board[pos2y][pos2x], self._board[pos2y][pos1x] = rook, None
         self.update_pieces(rook, pos2x, pos2y)
-        self._zobrist_list.append((pos2x, pos2y, rook.get_idx()))
+        self._update_zobrist_hash(pos2x, pos2y, rook.get_idx())
 
     def _move_to_space(self, piece: Piece, pos2x: int, pos2y: int):
         """
@@ -155,7 +151,7 @@ class Board:
         :return deleted pawn if it was promoted, None otherwise
         """
         pos1x, pos1y = piece.get_position()
-        self._zobrist_list.append((pos1x, pos1y, piece.get_idx()))
+        self._update_zobrist_hash(pos1x, pos1y, piece.get_idx())
         if isinstance(piece, Pawn) and (pos2y == 0 or pos2y == 7):
             self._promoted_pawns.append(piece)
             piece = self._pawn_promotion(piece, pos2x, pos2y)  # queen
@@ -163,7 +159,7 @@ class Board:
             self._promoted_pawns.append(None)
             self.update_pieces(piece, pos2x, pos2y)
 
-        self._zobrist_list.append((pos2x, pos2y, piece.get_idx()))
+        self._update_zobrist_hash(pos2x, pos2y, piece.get_idx())
         self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece, None
         self.update_move_count()
         self._moves_since_capture_list.append(False)
@@ -177,15 +173,15 @@ class Board:
         """capture piece2 with piece1"""
         pos1x, pos1y = piece1.get_position()
         pos2x, pos2y = piece2.get_position()
-        self._zobrist_list.append((pos1x, pos1y, piece1.get_idx()))
+        self._update_zobrist_hash(pos1x, pos1y, piece1.get_idx())
         if isinstance(piece1, Pawn) and (pos2y == 0 or pos2y == 7):  # Pawn promotion after capture
             self._promoted_pawns.append(piece1)
             piece1 = self._pawn_promotion(piece1, pos2x, pos2y)  # queen
         else:
             self._promoted_pawns.append(None)
             self.update_pieces(piece1, pos2x, pos2y)
-        self._zobrist_list.append((pos2x, pos2y, piece1.get_idx()))
-        self._zobrist_list.append((pos2x, pos2y, piece2.get_idx()))
+        self._update_zobrist_hash(pos2x, pos2y, piece1.get_idx())
+        self._update_zobrist_hash(pos2x, pos2y, piece2.get_idx())
 
         self._board[pos2y][pos2x], self._board[pos1y][pos1x] = piece1, None  # update positions on the board
         self.delete_piece(piece2)  # delete captured piece
@@ -208,22 +204,22 @@ class Board:
             pos1x, pos2x = 7, 5  # old rook x and new rook x
 
         rook = self.get_piece_from_position((pos2x, pos2y))
-        self._zobrist_list.append((pos2x, pos2y, rook.get_idx()))
+        self._update_zobrist_hash(pos2x, pos2y, rook.get_idx())
         self._board[pos2y][pos2x], self._board[pos2y][pos1x] = None, rook
         self.update_pieces(rook, pos1x, pos2y, revert=True)  # = (pos1x, pos1y)
-        self._zobrist_list.append((pos1x, pos2y, rook.get_idx()))
+        self._update_zobrist_hash(pos1x, pos2y, rook.get_idx())
 
     def _undo_move_to_space(self, piece: Piece, pos1, promoted):
         """make move on board
         :return deleted pawn if it was promoted, None otherwise"""
         pos1x, pos1y = pos1
         pos2x, pos2y = piece.get_position()
-        self._zobrist_list.append((pos2x, pos2y, piece.get_idx()))
+        self._update_zobrist_hash(pos2x, pos2y, piece.get_idx())
         if isinstance(promoted, Pawn):  # need to undo promote (piece is queen):
             piece = self._undo_promotion(promoted, piece)  # pawn
         else:
             self.update_pieces(piece, pos1x, pos1y, revert=True)
-        self._zobrist_list.append((pos1x, pos1y, piece.get_idx()))
+        self._update_zobrist_hash(pos1x, pos1y, piece.get_idx())
         self._board[pos2y][pos2x], self._board[pos1y][pos1x] = None, piece
         self.update_move_count(False)
         self._moves_since_capture_list.pop()
@@ -235,15 +231,15 @@ class Board:
         """undo capture piece2 with piece1"""
         pos1x, pos1y = pos1
         pos2x, pos2y = piece1.get_position()  # = captured_piece.get_position()  # piece1=queen
-        self._zobrist_list.append((pos2x, pos2y, piece1.get_idx()))
+        self._update_zobrist_hash(pos2x, pos2y, piece1.get_idx())
 
         if isinstance(promoted, Pawn):  # need to undo promote
             piece1 = self._undo_promotion(promoted, piece1)  # pawn
         else:
             self.update_pieces(piece1, pos1x, pos1y, revert=True)  # moves piece to new position
 
-        self._zobrist_list.append((pos1x, pos1y, piece1.get_idx()))
-        self._zobrist_list.append((pos2x, pos2y, captured_piece.get_idx()))
+        self._update_zobrist_hash(pos1x, pos1y, piece1.get_idx())
+        self._update_zobrist_hash(pos2x, pos2y, captured_piece.get_idx())
 
         self._board[pos2y][pos2x], self._board[pos1y][pos1x] = captured_piece, piece1  # update positions on the board
         self.add_piece(captured_piece)  # add captured piece
@@ -272,8 +268,6 @@ class Board:
             piece2 = self.get_piece_from_position(pos2)  # can be piece or none
             self._capture_piece(piece1, piece2)  # return the captured piece
         self.switch_turn()
-        lis = []  # TODO this
-        self.update_zobrist_hash(self._zobrist_list)
 
     def undo_move(self):
         """Unmake the last move (pos1, pos2) from the board"""
@@ -289,8 +283,6 @@ class Board:
         else:  # a capture
             self._undo_capture_piece(piece1, captured_piece, pos1, promoted)
         self.switch_turn()
-        lis = []  # TODO this
-        self.update_zobrist_hash(self._zobrist_list)
 
     def is_piece_in_the_way(self, pos1x: int, pos1y: int, pos2x: int, pos2y: int) -> bool:
         """
@@ -522,10 +514,8 @@ class Board:
 
     @Profiler.profile
     def checkmate(self) -> bool:
-        """
-        Determines if the current team is in checkmate.
-        :return: Returns true if the team is in checkmate, false otherwise.
-        """
+        """Determines if the current team is in checkmate.
+        :return: Returns true if the team is in checkmate, false otherwise"""
         return self.is_in_check(self._turn) and (len(self.legal_moves()) == 0)
 
     def get_king_position(self, color: int) -> tuple:
@@ -617,8 +607,6 @@ class Board:
             if isinstance(p, Piece):
                 self._zobrist_hash ^= zobrist_table[y][x][p.get_idx()]
 
-    def update_zobrist_hash(self, lis):
-        """lis = [(x_pos, y_pos, p_idx), ...]"""
-        for pos in lis:
-            x, y, idx = pos
-            self._zobrist_hash ^= zobrist_table[y][x][idx]
+    def _update_zobrist_hash(self, x, y, idx):
+        """Update the zobrist hash when a move is made on the board"""
+        self._zobrist_hash ^= zobrist_table[y][x][idx]

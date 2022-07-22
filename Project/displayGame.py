@@ -147,7 +147,8 @@ class PlayGame:
                             piece_to_move_chosen = False  # Reset the chosen piece variable
 
                     else:  # no piece chosen before
-                        if isinstance(self.board.get_board()[y][x], Piece) and self.board.get_board()[y][x].get_color() == side:
+                        p = self.board.get_board()[y][x]
+                        if isinstance(p, Piece) and p.get_color() == side:
                             # Change the background color of the cell to green
                             rect_dim = (x * self.cell_size, (7 - y) * self.cell_size, self.cell_size, self.cell_size)
                             pygame.draw.rect(self.display_board, self.chosen_color, rect_dim)
