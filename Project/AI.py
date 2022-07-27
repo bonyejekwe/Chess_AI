@@ -235,7 +235,7 @@ class Node:
     def simulation(self, t, team):
         """Run a simulation, return a resulting score"""
         i = 0  # limit the depth of the simulation (going further doesn't really give any information)
-        while (not self.board.is_game_over()) and (i < 20):
+        while (not self.board.is_game_over()) and (i < 5):
             # random move on the board
             moves = AI.format_legal_moves(self.board)
             move = random.choice(moves)
@@ -244,7 +244,7 @@ class Node:
             self.board.move_piece(move[0], move[1])
             i += 1
 
-        w = AI.scoring(self.board, team)
+        w = MCTSAI(1).scoring(self.board, team)
 
         for _ in range(i):
             self.board.undo_move()
@@ -267,6 +267,7 @@ class MCTSAI(AI):
     def best_board(node):
         """Best action"""
         counter = {}
+        s = 0
         for n in node.children:
             if len(n.samples) == 0:
                 sample = 0
@@ -274,6 +275,8 @@ class MCTSAI(AI):
                 sample = sum(n.samples) / len(n.samples)  # [sample] = [n.total / n.visits]
             counter[n.move] = sample
             print('d', n.move, sample, len(n.samples))
+            s += len(n.samples)
+        print('s', s)
 
         lis = counter.items()
         v = max(counter.values())
@@ -287,15 +290,15 @@ class MCTSAI(AI):
         i = 0
         while time.time() - start < 5:  # 0.9 seconds
             n = root
-            print('4', time.time() - start)
+            #print('4', time.time() - start)
             while not n.is_leaf_node():
                 n = n.select_node()
-            print('5', time.time() - start)
+            #print('5', time.time() - start)
             if n.visits != 0:  # if leaf node not visited yet, then expand it
                 n = n.expand_node()
-            print('6', time.time() - start)
+            #print('6', time.time() - start)
             result = n.simulation(start, self._team)
-            print('7', time.time() - start)
+            #print('7', time.time() - start)
             n.backpropogate(result)
             i += 1
         print(i)
