@@ -6,6 +6,11 @@ from pieces import *
 from all_moves import all_positions
 
 
+class InvalidModeError(Exception):
+    def __init__(self, mode):
+        super().__init__(f"Invalid Mode: {mode} is not a valid mode. Must be either 1 or 2")
+
+
 class InvalidTeamError(Exception):
     def __init__(self, team):
         super().__init__(f"Invalid Team: {team} is not a valid team. Must be either 1 or -1")
@@ -29,15 +34,13 @@ class PlayGame:
         self.pos_pieces = ['K', 'Q', 'B', 'R', 'N', 'P']  # Define the possible pieces
 
         # Get the piece images
-        self.white_pieces = {p: pygame.transform.scale(pygame.image.load(r'Piece_Images/{}/{}.png'.format(
-            'white', p)), (100, 100)) for p in self.pos_pieces}
-
-        self.black_pieces = {p: pygame.transform.scale(pygame.image.load(r'Piece_Images/{}/{}.png'.format(
-            'black', p)), (100, 100)) for p in self.pos_pieces}
+        self.white_pieces = {p: pygame.transform.scale(pygame.image.load(f'Piece_Images/white/{p}.png'), (100, 100))
+                             for p in self.pos_pieces}
+        self.black_pieces = {p: pygame.transform.scale(pygame.image.load(f'Piece_Images/black/{p}.png'), (100, 100))
+                             for p in self.pos_pieces}
 
         self.display_board = pygame.Surface((self.width, self.height))  # Create the board display surface
         self.board = Board()  # Create the board
-
 
     def initialize_board(self):
         """Draws the board to begin with and sets important instance variables"""
@@ -78,8 +81,7 @@ class PlayGame:
         Profiler.report()
         print('The winner is: {} !!!'.format(result))  # Print the game result
 
-
-    def master_function(self, game_ai):  # effectively defaults to no AI for game
+    def master_function(self, game_ai):
         """The graphics master function"""
         game_exit = False  # Define the game exit variable
         game_display = pygame.display.set_mode((self.width, self.height))  # set display
@@ -87,8 +89,6 @@ class PlayGame:
         chosen_piece = []  # Set the variable for the location of the chosen piece
 
         side = -1 * game_ai.get_team()  # side is the player's team
-        if side == -1:  # Check if the player's side is black, and if it is then have the AI make the first move
-            pass
 
         while not game_exit:  # While the exit button has not been pressed
             if self.board.is_game_over():
@@ -176,6 +176,23 @@ class PlayGame:
                     game_display.blit(self.black_pieces[piece_type], (self.cell_size * y, self.cell_size * (7 - x)))
 
 
-if __name__ == "__main__":
+def main():
+    """Start a game using num of AI's (1=player vs AI, 2=AI vs AI). Defaults to AI vs AI"""
     game = PlayGame()
     game.run_game()
+    return
+
+    # Todo implement modes
+    #mode = input("Select 1 to play against an AI. Select 2 to perform an AI vs AI simulation: ")
+    #if mode == "1":
+    #    game = PlayGame()
+    #    game.run_game()
+    #elif mode == "2":
+    #    game = Simulation()
+    #    game.run_game()
+    #else:
+    #    raise InvalidModeError(mode)
+
+
+if __name__ == "__main__":
+    main()
