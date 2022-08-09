@@ -55,7 +55,7 @@ class PlayGame:
 
     def run_game(self):
         """Run game using num of AI's (1=player vs AI, 2=AI vs AI). Defaults to AI vs AI"""
-        
+
         # Get the side from the player
         side = input("Select side you would like to play on (1 for white, -1 for black): ")
         if side == "1" or side == "-1":
@@ -181,17 +181,6 @@ def main():
     game = PlayGame()
     game.run_game()
     return
-
-    # Todo implement modes
-    #mode = input("Select 1 to play against an AI. Select 2 to perform an AI vs AI simulation: ")
-    #if mode == "1":
-    #    game = PlayGame()
-    #    game.run_game()
-    #elif mode == "2":
-    #    game = Simulation()
-    #    game.run_game()
-    #else:
-    #    raise InvalidModeError(mode)
 
 
 if __name__ == "__main__":

@@ -29,7 +29,7 @@ class Piece:
         return self._color  # if self._color == 1: # return "white" # else: # return "black"
 
     def get_idx(self):
-        ":return the index of the piece"
+        """:return the index of the piece"""
         return self._idx
 
     def get_position(self):
